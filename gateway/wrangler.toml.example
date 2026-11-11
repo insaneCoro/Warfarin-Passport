@@ -1,0 +1,7 @@
+name = "warfarin-passport-api"
+main = "worker.mjs"
+compatibility_date = "2026-11-01"
+[vars]
+FIREBASE_PROJECT_ID = "warfarin-43d4d"
+ALLOWED_ORIGIN = "https://insanecoro.github.io"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/REPLACE/exec"
