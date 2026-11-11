@@ -1,3 +1,4 @@
+import {backendErrorCode} from '../connection-errors.mjs';
 const encoder = new TextEncoder();
 let keys, keysUntil=0;
 const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
@@ -19,10 +20,14 @@ export default {async fetch(request,env){
  if(origin!==env.ALLOWED_ORIGIN)return response({ok:false,error:'Origin rejected'},403);
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(request.method!=='POST')return response({ok:false,error:'POST required'},405);
+ let failureCode='AUTH_TOKEN_INVALID';
  try{
-  if(!env.FIREBASE_PROJECT_ID||!env.GATEWAY_HMAC_SECRET||env.GATEWAY_HMAC_SECRET.length<32||!/^https:\/\/script.google.com\/macros\/s\/[^/]+\/exec$/.test(env.APPS_SCRIPT_URL))throw Error('Configuration');
-  const token=/^Bearer (.+)$/.exec(request.headers.get('Authorization')||'')?.[1];if(!token)throw Error('Unauthorized');
+  if(!env.FIREBASE_PROJECT_ID)return response({ok:false,errorCode:'GATEWAY_PROJECT_MISSING'},503);
+  if(!env.GATEWAY_HMAC_SECRET||env.GATEWAY_HMAC_SECRET.length<32)return response({ok:false,errorCode:'GATEWAY_SECRET_MISSING'},503);
+  if(!/^https:\/\/script.google.com\/macros\/s\/[^/]+\/exec$/.test(env.APPS_SCRIPT_URL))return response({ok:false,errorCode:'GATEWAY_URL_INVALID'},503);
+  const token=/^Bearer (.+)$/.exec(request.headers.get('Authorization')||'')?.[1];if(!token)return response({ok:false,errorCode:'AUTH_TOKEN_MISSING'},401);
   const user=await verifyToken(token,env.FIREBASE_PROJECT_ID);
+  failureCode='REQUEST_INVALID';
   const raw=await request.text();if(encoder.encode(raw).length>100000)return response({ok:false,error:'Request too large'},413);
   const {action,params}=JSON.parse(raw);if(typeof action!=='string'||!params||typeof params!=='object'||Array.isArray(params))throw Error('Invalid request');
   const bytes=encoder.encode(JSON.stringify({action,params,user}));
@@ -30,7 +35,13 @@ export default {async fetch(request,env){
   const ts=Date.now(),nonce=crypto.randomUUID();
   const key=await crypto.subtle.importKey('raw',encoder.encode(env.GATEWAY_HMAC_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);
   const signature=Array.from(new Uint8Array(await crypto.subtle.sign('HMAC',key,encoder.encode(`v1\n${ts}\n${nonce}\n${payload}`))),x=>x.toString(16).padStart(2,'0')).join('');
+  failureCode='BACKEND_UNREACHABLE';
   const upstream=await fetch(env.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({ts,nonce,payload,signature}),redirect:'follow',headers:{'Content-Type':'application/json'}});
-  if(!upstream.ok)throw Error('Upstream');return response(await upstream.json());
- }catch{return response({ok:false,error:'Request rejected; verify session and configuration'},401);}
+  if(!upstream.ok)return response({ok:false,errorCode:'BACKEND_HTTP_ERROR'},502);
+  failureCode='BACKEND_RESPONSE_INVALID';
+  const result=await upstream.json();
+  if(typeof result.ok!=='boolean')throw Error('Invalid response');
+  if(!result.ok)return response({...result,errorCode:backendErrorCode(result.error)});
+  return response(result);
+ }catch{return response({ok:false,error:'Clinic API request rejected',errorCode:failureCode},failureCode==='AUTH_TOKEN_INVALID'?401:502);}
 }};
