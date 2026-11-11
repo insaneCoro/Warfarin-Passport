@@ -1,4 +1,4 @@
-import config from './config.js';
+import config from './config.js?v=connected-2';
 let session=null;
 export const connected=config.enabled;
 export async function signIn(email,password){
