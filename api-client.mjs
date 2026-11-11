@@ -1,6 +1,8 @@
-import config from './config.js?v=connected-2';
+import config from './config.js?v=demo-and-staff-3';
+import {usesConnectedApi} from './mode-utils.mjs';
 let session=null;
-export const connected=config.enabled;
+export const connectionAvailable=config.enabled;
+export const connected=usesConnectedApi(config.enabled,globalThis.location?.search||'');
 export async function signIn(email,password){
  if(!connected||!config.gatewayUrl.startsWith('https://'))throw Error('Connection not configured');
  const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(config.firebaseApiKey)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})});

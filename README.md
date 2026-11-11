@@ -2,7 +2,7 @@
 
 Responsive anticoagulation clinic prototype. **Synthetic patients only; not validated for clinical use.**
 
-The default GitHub Pages demo stores fictional records in the browser. Optional connected mode uses Firebase Authentication → Cloudflare Worker → signed Google Apps Script requests → the existing Google Sheet. Connection is disabled in `config.js`; no accounts or services are provisioned by this repository.
+The default GitHub Pages demo stores fictional records in the browser. Optional connected mode uses Firebase Authentication → Cloudflare Worker → signed Google Apps Script requests → the existing Google Sheet. Public connection settings are in `config.js`. The default URL opens the browser demo; choose **Staff sign-in** (`?mode=connected`) to use the authenticated test database, or **Open demo patients** to return. The modes keep their records separate.
 
 ## Implemented
 
