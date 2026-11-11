@@ -2,5 +2,5 @@
 export default {
   enabled: false,
   firebaseApiKey: 'AIzaSyDLak2duPjpMZFzbfyJc-otFmCrVvtpOXs',
-  gatewayUrl: ''
+  gatewayUrl: 'https://warfarin-passport-api.m-k-altaher.workers.dev'
 };
