@@ -18,8 +18,7 @@ function doPost(e){
     const expected=Utilities.computeHmacSha256Signature(signable,secret).map(v=>('0'+((v+256)%256).toString(16)).slice(-2)).join('');
     if(!constantTimeEqual_(sig,expected))throw Error('Unauthorized request');
     const cache=CacheService.getScriptCache(),nonceKey='nonce-'+nonce;
-    if(cache.get(nonceKey))throw Error('Duplicate request');
-    cache.put(nonceKey,'1',300);
+    withLock_(()=>{if(cache.get(nonceKey))throw Error('Duplicate request');cache.put(nonceKey,'1',300);});
     const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(bodyB64)).getDataAsString('UTF-8');
     const payload=JSON.parse(raw);
     if(!payload||typeof payload.action!=='string'||!payload.user?.uid)throw Error('Invalid request');
@@ -32,7 +31,7 @@ function doPost(e){
   return ContentService.createTextOutput(JSON.stringify(output)).setMimeType(ContentService.MimeType.JSON);
 }
 function constantTimeEqual_(a,b){if(typeof a!=='string'||typeof b!=='string')return false;let diff=a.length^b.length;for(let i=0;i<Math.max(a.length,b.length);i++)diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return diff===0}
-function authorized_(identity){const u=findRow_('Users','firebaseUid',identity.uid);if(!u||String(u.active).toLowerCase()!=='true'||!['admin','subadmin'].includes(u.role))throw Error('User is not approved');
+function authorized_(identity){const u=findRow_('Users','firebaseUid',identity.uid);if(!u||String(u.active).toLowerCase()!=='true'||!['admin','subadmin','clinician'].includes(u.role))throw Error('User is not approved');
   // Email is supplementary only; never trust identity from browser without signed gateway assertion.
   if(u.email&&identity.email&&String(u.email).toLowerCase()!==String(identity.email).toLowerCase())throw Error('User email mismatch');
   return {uid:u.firebaseUid,role:u.role,email:u.email,displayName:u.displayName};
@@ -40,7 +39,7 @@ function authorized_(identity){const u=findRow_('Users','firebaseUid',identity.u
 function requireAdmin_(user){if(user.role!=='admin')throw Error('Admin permission required')}
 function dispatch_(payload){const user=authorized_(payload.user),a=payload.action,p=payload.params||{};
  const read=['auth.me','patients.list','patients.get','followups.list','users.list'];
- if(!read.includes(a)&&!['patients.create','patients.update','encounters.create','followups.complete','inventory.set','notes.create','users.upsert'].includes(a))throw Error('Unsupported action');
+ if(!read.includes(a)&&!['patients.create','patients.update','encounters.create','followups.complete','followups.record','decisions.approve','inventory.set','notes.create','users.upsert'].includes(a))throw Error('Unsupported action');
  if(a==='auth.me')return user;
  if(a==='patients.list')return patientsList_(p,user);
  if(a==='patients.get')return patientGet_(p,user);
@@ -48,6 +47,8 @@ function dispatch_(payload){const user=authorized_(payload.user),a=payload.actio
  if(a==='patients.update')return patientUpdate_(p,user);
  if(a==='encounters.create')return encounterCreate_(p,user);
  if(a==='followups.list')return followupList_(p,user);
+ if(a==='followups.record')return followupRecord_(p,user);
+ if(a==='decisions.approve')return decisionApprove_(p,user);
  if(a==='followups.complete')return followupComplete_(p,user);
  if(a==='inventory.set')return inventorySet_(p,user);
  if(a==='notes.create')return noteCreate_(p,user);

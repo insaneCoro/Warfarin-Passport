@@ -1,105 +1,46 @@
 # Warfarin Passport
 
-**Virtual warfarin clinic prototype — synthetic data only.**
+Responsive anticoagulation clinic prototype. **Synthetic patients only; not validated for clinical use.**
 
-Repository target: https://github.com/insaneCoro/Warfarin-Passport
+The default GitHub Pages demo stores fictional records in the browser. Optional connected mode uses Firebase Authentication → Cloudflare Worker → signed Google Apps Script requests → the existing Google Sheet. Connection is disabled in `config.js`; no accounts or services are provisioned by this repository.
 
-This starter project includes a responsive GitHub Pages demo, a Google Apps Script backend that provisions a Google Sheets database, and a Cloudflare Worker gateway for Firebase-authenticated requests. **These components are not yet deployed or connected, and they have not undergone clinical/security validation.**
+## Implemented
 
-## What works now
+- Recall-focused dashboard with patient registry, pending calls, last contact and out-of-range review list. Inspired by the supplied dashboard reference; unsupported TTR/refill metrics are omitted.
+- **Open Patient** from the follow-up worklist. Document attempts, clinical actions, notes and a link to a saved INR/dose encounter in the passport. Saving a failed contact never closes the task. Completion is explicit and preserves all attempts and prior tasks.
+- Append-only longitudinal regimens with INR, previous/new weekly totals and Sun–Sat schedules, percentage change, reason, author/time and next INR date. Unknown legacy fields stay unknown.
+- Separate authenticated clinician approval of a saved decision. Admin/subadmin status does not imply clinical credentials; demo records never receive authenticated signatures.
+- Backend append-only audit events for INR entry, dose decisions, note creation/amendment, follow-up attempts/completion and approval. Note amendments append a new note linked to the original.
+- Additive migration for the existing Sheets database. No tab, historical row or existing database is deleted/recreated.
+- Optional sign-in and in-memory API connection; connected records/tokens are never saved to localStorage. Sessions expire and require sign-in again. Approved staff authorization is checked on every Apps Script request.
+- Source-linked conservative clinical review prompts and urgent escalation reminders. Dose suggestions never populate or apply a schedule.
 
-The browser demo (`index.html`, `app.js`, `styles.css`, `date-utils.mjs`) supports:
+## Clinical reference scope
 
-- Search fictional patients by `DEMO-` MRN, name, or telephone number
-- Register synthetic patients with required MRN, name, DOB and diagnosis
-- View chronological INR trend against a patient-specific target range
-- Enter a result, seven-day clinician-confirmed dose schedule, and note
-- Automatically schedule a routine call **two calendar days after the next INR test**
-- Mark follow-up calls completed, update confirmed patient tablet counts, and add notes
-- Restore demo records on refresh from local browser storage, or reset fictional records
+[UW Medicine warfarin guidance](https://sites.uw.edu/anticoag/drugs/warfarin/) was retrieved on 11 November 2026. It includes individualized targets, maintenance nomograms, interacting drugs and reversal guidance. The application currently provides contextual review prompts rather than implementing its dose nomograms.
 
-**Important:** The demo has no real authentication. Browser storage is **not** a medical-record database. Never enter real names, MRNs, phone numbers, diagnoses or other health information in the demo.
+The requested [Anticoagulation Forum PDF URL](https://acforum-excellence.org/Resource-Center/resource_files/-2021-02-10-125746.pdf) returned a website HTML response during verification, not a PDF. Its link is retained, but no recommendation is attributed to unverified contents. Integrating and validating that document and advanced nomograms is a subsequent clinical review stage.
 
-## Suggested sequence
+## Run and test
 
-### A. Publish the demo on GitHub Pages (no real patient data)
+Serve this directory with a static HTTP server, e.g. `python3 -m http.server 8000`. Open `http://localhost:8000`.
 
-1. Upload project files to the `main` branch of `insaneCoro/Warfarin-Passport`, preserving folder paths.
-2. On GitHub go to **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-3. GitHub Actions workflow `.github/workflows/pages.yml` publishes **only** the four public frontend files, not backend source or config.
-4. Expected demo website (after Pages is successfully enabled): `https://insanecoro.github.io/Warfarin-Passport/`.
-5. Open that URL on iPad or Windows. It is a synthetic-data demo, not the production clinic.
-
-### B. Create the Google Sheets database automatically
-
-1. Visit https://script.google.com and create a new **standalone Apps Script project** titled `Warfarin Passport Backend` under the authorized organizational account.
-2. In the Apps Script editor, create 3 `.gs` files and copy the source files from `apps-script/` into `Database.gs`, `Security.gs`, and `API.gs` (the editor may default to `Code.gs`, which you can rename).
-3. Select function `setupDatabase` and run it **once**, authorizing the requested Google Sheets and Drive scopes. It creates one new empty Google Sheet with all linked tabs and saves its ID as the `DATABASE_ID` Script Property.
-4. Find the database in Drive (`Warfarin Passport — Prototype Database`). Restrict sharing to approved staff. The Google Sheet is initially empty; no patient records are generated.
-5. In the [Firebase Console](https://console.firebase.google.com/), create an authentication project and provision your first test staff user. Copy the **Firebase UID** from Authentication → Users. In Apps Script **Project Settings → Script properties**, set `ROOT_ADMIN_UID` and `ROOT_ADMIN_EMAIL` to your test user. Run `bootstrapAdmin` **once**.
-6. Do **not** deploy the backend openly until the gateway is configured and tested. Scripts are source code, not a live database connection until you do these steps.
-
-### C. Configure the protected API gateway
-
-1. Set up Firebase Authentication. For the first prototype, use approved test accounts and password sign-in, and disable public self-registration. Real user provisioning and account revocation require an approved procedure.
-2. In Apps Script project settings, set `GATEWAY_HMAC_SECRET` to a cryptographically random secret of at least 32 characters. Generate this in your own environment; **do not paste it into ChatGPT or GitHub**.
-3. Deploy Apps Script as a Web App. For centralized sheet access, it may need **Execute as: Me** and **Who has access: Anyone** so the Worker can call it; this is acceptable **only after the gateway security has been reviewed and verified**, because that grants the endpoint owner privileges. The gateway HMAC checks, allowlist, auditing, and rate limiting need a security review before actual clinical use.
-4. Copy `gateway/wrangler.toml.example` to `gateway/wrangler.toml` and fill only non-secret values. Keep the Apps Script URL in Worker configuration. Set `ALLOWED_ORIGIN=https://insanecoro.github.io` (origin only; no `/Warfarin-Passport/` suffix).
-5. From the `gateway` directory, run `npm install` and `npx wrangler secret put GATEWAY_HMAC_SECRET`; paste **the same secret** as in Apps Script, then `npx wrangler deploy`.
-6. The gateway verifies Firebase ID tokens (RS256, Firebase project audience/issuer), signs the data envelope with HMAC-SHA256, and forwards it to Apps Script. Apps Script checks the HMAC, timestamp/nonce, and approved Users table role before data access.
-7. **The browser demo is intentionally not yet wired to this gateway.** Integrating Firebase login and live API calls is the next development milestone. Do not claim a secure clinic login is functional at this stage.
-
-### D. First live integration milestone
-
-Implement: Firebase login view, `auth.me`, patients list/create, patient get, encounter save, follow-ups, stock update. Use **synthetic records only** until organizational security and clinical approvals are complete. Confirm each actor is allowed in the Apps Script `Users` sheet. Admin provisioning requires both Firebase account creation and an authorized `users.upsert` operation in the backend.
-
-## Database schema
-
-`setupDatabase()` creates these tabs:
-
-| Tab | Purpose |
-| --- | --- |
-| `Patients` | MRN, demographics, diagnosis, target INR, enrollment, row version |
-| `INR_Results` | Time-stamped INR result history |
-| `Encounters` | Clinical review/notes, next INR, idempotency key |
-| `Dose_Plans` | Seven daily doses and total weekly dose |
-| `Follow_Ups` | INR check dates, routine calls (+2 calendar days), completion |
-| `Inventory` | Confirmed patient-held tablet count by strength |
-| `Inventory_Log` | Stock adjustment history |
-| `Clinical_Notes` | Attributed, dated clinician notes |
-| `Users` | Approved Firebase UID, email, role, active status |
-| `Audit_Log` | Dated actions and actors |
-
-MRN uniquely identifies a patient clinically, while internal immutable UUIDs link records between tabs. `Patients.rowVersion` supports optimistic concurrency, with a server-side write lock for critical mutations. Encounters are append-only; failed multi-sheet transactions can leave an encounter as `Pending` and require reconciliation.
-
-## Backend operations
-
-- `auth.me`
-- `patients.list`, `patients.get`, `patients.create`, `patients.update`
-- `encounters.create`
-- `followups.list`, `followups.complete`
-- `inventory.set`, `notes.create`
-- `users.list`, `users.upsert` (admin-only)
-
-Request envelope: a POST to the gateway with `{ "action":"patients.list", "params":{"query":"DEMO-"} }`, `Authorization: Bearer <Firebase ID token>`, and the allowed `Origin`. The gateway forwards a timestamped HMAC-authenticated payload to Apps Script. No client can send a trusted UID or role directly to Apps Script.
-
-## Clinical and information-security limitations
-
-- No automatic dose adjustment, INR treatment recommendation, or universal critical-INR threshold. Abnormal results need qualified clinician review and locally approved escalation rules.
-- The two-day call scheduling rule **must not delay urgent INR/bleeding escalation**.
-- This prototype does not include tested emergency alerts, MFA enforcement, end-to-end audit immutability, rate limits, monitored backups, retention policies, change management, or validated disaster recovery.
-- A shared spreadsheet is **not an inherently compliant clinical database**; production use needs Saudi health-data residency, PDPL, organizational approval, appropriate Google contracts, access control, and technical risk review.
-- GitHub Pages itself is public and suitable only for static frontend assets, never private records or credentials.
-- The Apps Script Content Service uses a redirect for responses; the Worker follows it server-side.
-- Script quotas, Sheets concurrency, and lack of multi-table ACID transactions make this starter inappropriate for high-volume clinical production without further validation/redesign.
-
-## Testing
-
-Run frontend calendar tests:
-
-```bash
+```sh
 node --test tests/*.test.mjs
 ```
 
-For production, add backend unit/integration tests, security pen testing, and clinician-approved test cases before a pilot with real patients.
+Tests cover dose snapshots/calculations, failed-contact completion, preserved history, identity/approval, disabled-user authorization, signed Firebase tokens and gateway origin rejection. Desktop (1366px) and iPad portrait (820px) Chromium smoke checks exercised patient opening, unsuccessful attempt, successful completion and an INR encounter; screenshots are in `docs/`. These do not replace live Firebase/Worker/Apps Script integration tests or native iPad Safari/Windows browser acceptance.
 
+## Setup and deployment
+
+Follow [the deployment guide](docs/DEPLOYMENT.md). **The existing Sheet must be retained. Run `migrateDatabase`, not `setupDatabase`.** Backend source files are at the repository root, not an `apps-script/` folder.
+
+`.github/workflows/pages.yml` tests pull requests and publishes only explicit public frontend files on pushes to `main`. Choose GitHub Actions in repository Settings → Pages. Merging this branch publishes the synthetic demo if Pages is enabled; it does not deploy the Worker or Apps Script.
+
+## Limits requiring review
+
+Sheets is not an ACID database. A partial encounter is marked `Pending`, excluded from active clinical results/regimens, and requires administrator reconciliation; retries use the same request ID. Never blindly submit a new request ID after an uncertain save. Do not manually mark a partial encounter complete until all records and audits have been verified. Concurrent encounter saves use the patient row version.
+
+The application prevents updates to append-only record types, but Sheet owners can still edit/delete cells: this is **not tamper-proof audit storage**. Restrict direct editor access and establish independent immutable audit export, backups and retention before any clinical pilot. Gateway rate limiting, Firebase revocation checks/MFA, production alerting and full integration/security/clinical validation remain deployment work. No real patient information should be used in this prototype.
+
+To repeat browser smoke checks, install Playwright in your development environment, start the local server and run `node tests/browser-smoke.cjs`. Set `CHROMIUM_PATH` for a system Chromium or use Playwright's installed browser. Optional `TEST_URL` overrides localhost. All browser test inputs are synthetic.
