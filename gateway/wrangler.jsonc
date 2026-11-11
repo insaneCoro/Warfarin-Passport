@@ -4,6 +4,7 @@
   "main": "worker.mjs",
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
+  "keep_vars": true,
   "vars": {
     "FIREBASE_PROJECT_ID": "warfarin-43d4d",
     "ALLOWED_ORIGIN": "https://insanecoro.github.io"
