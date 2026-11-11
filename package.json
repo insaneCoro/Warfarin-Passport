@@ -1,0 +1,9 @@
+{
+  "name":"warfarin-passport-gateway",
+  "private":true,
+  "version":"0.1.0",
+  "type":"module",
+  "scripts":{"dev":"wrangler dev","deploy":"wrangler deploy","typecheck":"tsc --noEmit"},
+  "dependencies":{"jose":"^5.9.6"},
+  "devDependencies":{"typescript":"^5.7.3","wrangler":"^3.99.0","@cloudflare/workers-types":"^4.20250129.0"}
+}
