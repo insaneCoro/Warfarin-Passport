@@ -102,3 +102,4 @@ node --test tests/*.test.mjs
 ```
 
 For production, add backend unit/integration tests, security pen testing, and clinician-approved test cases before a pilot with real patients.
+
