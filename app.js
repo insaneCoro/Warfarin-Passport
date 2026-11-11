@@ -1,4 +1,4 @@
-import {connectionAvailable, connected, signIn, signOut, api, patientFromApi} from './api-client.mjs?v=auth-errors-4';
+import {connectionAvailable, connected, signIn, signOut, api, patientFromApi} from './api-client.mjs?v=gateway-errors-5';
 import {doseSummary, followupAttempt, referenceGuidance} from './clinical-utils.mjs';
 import {addDays, todayRiyadh, dateLabel, ageFromDOB, sumDose} from './date-utils.mjs';
 
