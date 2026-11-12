@@ -4,6 +4,20 @@ The new **Deploy existing Apps Script** GitHub Actions workflow updates your exi
 
 This workflow is implemented, but **cannot run until you authorize your own Google account once**. The repository's GitHub connection does not grant access to your Google Apps Script project.
 
+## iPad / Safari: browser-only authorization
+
+Use [Google Cloud Shell](https://shell.cloud.google.com/) under the Google account that owns the existing Apps Script backend. No terminal application is required on the iPad. If the interface is cramped, use Safari’s Request Desktop Website option and landscape orientation. Google documents the standalone browser terminal in its [Cloud Shell launch guide](https://docs.cloud.google.com/shell/docs/launching-cloud-shell).
+
+1. Enable Google Apps Script API at https://script.google.com/home/usersettings.
+2. Open Cloud Shell, accept its initial prompt if presented, and wait for the terminal prompt.
+3. Run `npx --yes @google/clasp login --no-localhost`. This is clasp’s [supported remote-login flow](https://github.com/google/clasp/blob/master/src/commands/login.ts).
+4. Open the authorization link printed by clasp in a separate Safari tab. Sign in with the backend-owner Google account and review/approve the requested permissions.
+5. The browser redirects to a localhost URL. With this remote flow, Safari may show that it cannot connect. Copy the **entire resulting address from Safari’s address bar** and paste it into the **Cloud Shell terminal prompt**, not into chat. It contains a temporary authorization code. Clasp validates its state before using it, as implemented in [Google’s remote authorization flow](https://github.com/google/clasp/blob/master/src/auth/serverless_auth_code_flow.ts).
+6. Once clasp reports successful login, run `cloudshell edit ~/.clasprc.json` to open the credential file privately in the Cloud Shell editor. Google documents the editor command [here](https://docs.cloud.google.com/shell/docs/using-cloudshell-command). Copy the file contents directly into the repository’s encrypted Actions secret `CLASPRC_JSON` using a separate GitHub tab. Do not paste the credential here, commit it, or include it in a screenshot.
+7. Add the two Actions variables and perform the read-only preflight / first publication below. The same workflow then works from your iPad through GitHub’s website.
+
+If Google blocks authorization or the browser terminal is unavailable, stop and report the non-sensitive error text; never work around a Google account-policy restriction or share a sign-in URL/credential for someone else to complete it.
+
 ## One-time authorization (Windows or another computer)
 
 1. Open https://script.google.com/home/usersettings under the Google account that owns the existing backend. Enable **Google Apps Script API**.
