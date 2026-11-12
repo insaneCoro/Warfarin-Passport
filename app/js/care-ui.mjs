@@ -1,5 +1,5 @@
-import { dateLabel } from './date-utils.mjs';
-import { buildPatientMessage } from './care-messages.mjs?v=care-5';
+import { dateLabel } from './date-utils.mjs?v=__BUILD__';
+import { buildPatientMessage } from './care-messages.mjs?v=__BUILD__';
 const esc = (x) =>
   String(x ?? '').replace(
     /[&<>"']/g,

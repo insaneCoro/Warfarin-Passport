@@ -13,6 +13,7 @@ function withLock_(fn) {
     throw busyError_();
   }
   if (!acquired) throw busyError_();
+  clearRowCache_(); // another request may have written while we waited for the lock
   try {
     return fn();
   } finally {
@@ -1053,10 +1054,7 @@ function workspacePrepare_(p, user) {
           });
           audit_(user, 'message.fixture.import', 'Team_Messages', sample.id, { synthetic: true });
         }
-      PropertiesService.getScriptProperties().setProperty(
-        'CLINIC_WORKSPACE',
-        JSON.stringify({ ...current, preparedRelease: CLINIC_RELEASE }),
-      );
+      saveWorkspaceState_({ ...current, preparedRelease: CLINIC_RELEASE });
     });
   return result;
 }
@@ -1104,7 +1102,7 @@ function workspaceReset_(p, user) {
       after: { workspaceId: next.id, mode: 'empty' },
       historyRetained: true,
     });
-    PropertiesService.getScriptProperties().setProperty('CLINIC_WORKSPACE', JSON.stringify(next));
+    saveWorkspaceState_(next);
     audit_(user, 'workspace.reset.complete', 'Workspace', next.id, {
       before: { workspaceId: state.id },
       after: next,

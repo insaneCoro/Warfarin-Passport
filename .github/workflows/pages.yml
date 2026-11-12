@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # ?v=__BUILD__ on every asset becomes the commit id, so browsers fetch fresh files after each deploy.
+      - run: grep -rl '__BUILD__' app | xargs sed -i "s/__BUILD__/${GITHUB_SHA::8}/g"
       # Only the frontend folder is published.
       - uses: actions/upload-pages-artifact@v3
         with:

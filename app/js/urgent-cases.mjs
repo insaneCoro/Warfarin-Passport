@@ -1,4 +1,4 @@
-import { latestAssessment, latestResult } from './review-context.mjs?v=management-4';
+import { latestAssessment, latestResult } from './review-context.mjs?v=__BUILD__';
 /** Review priority, not a diagnosis. Red target flags do not all imply an emergency. */
 export function urgentCase(p, today) {
   const result = latestResult(p);

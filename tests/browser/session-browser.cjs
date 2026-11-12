@@ -51,9 +51,10 @@ const { chromium } = require('playwright');
       else if (action === 'workspace.prepare') {
         prepare++;
         result = { remaining: 0 };
-      } else if (action === 'patients.list' && failList-- > 0) return r.abort('failed');
+      } else if (action === 'patients.workspace' && failList-- > 0) return r.abort('failed');
       else if (
         action === 'staff.requests.list' ||
+        action === 'patients.workspace' ||
         action === 'patients.list' ||
         action === 'users.list' ||
         action === 'messages.list'
@@ -75,7 +76,7 @@ const { chromium } = require('playwright');
     });
     await p.goto(process.env.TEST_URL || 'http://127.0.0.1:8003/');
     await p.evaluate(async () => {
-      window.testClient = await import('/js/api-client.mjs?v=care-5');
+      window.testClient = await import('/js/api-client.mjs?v=__BUILD__');
       await testClient.signIn('admin@example.test', 'synthetic-password');
     });
     await p.clock.setSystemTime(Date.now() + 3601000);

@@ -84,7 +84,12 @@ const { chromium } = require('playwright');
         else if (action === 'workspace.prepare') {
           prepared++;
           result = reset ? { remaining: 0, disabled: true } : { remaining: 0 };
-        } else if (action === 'staff.requests.list' || action === 'patients.list' || action === 'users.list')
+        } else if (
+          action === 'staff.requests.list' ||
+          action === 'patients.list' ||
+          action === 'patients.workspace' ||
+          action === 'users.list'
+        )
           result = [];
         else if (action === 'workspace.reset') {
           if (

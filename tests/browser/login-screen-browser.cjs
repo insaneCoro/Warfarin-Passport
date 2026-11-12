@@ -28,7 +28,7 @@ const { chromium } = require('playwright');
             workspaceReady: true,
             workspaceId: '',
           };
-        else if (action === 'patients.list') result = [];
+        else if (action === 'patients.list' || action === 'patients.workspace') result = [];
         else if (action === 'staff.requests.list') result = [];
         else if (action === 'users.list')
           result = [
