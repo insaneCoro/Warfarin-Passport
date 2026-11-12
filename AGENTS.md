@@ -43,7 +43,7 @@ The GitHub Pages HTML/CSS/JavaScript frontend obtains a Firebase ID token and se
 
 The app is for clinic staff only; there is no patient login (removed at the owner's request). Email verification alone does not grant staff membership. Verified staff can request access and an administrator approves the request in-app. Clinical approval requires an actual authenticated clinician role. Internal notes and team discussions must remain private.
 
-Database migrations are additive and preserve historical regimens and audit events. Staff-request metadata is stored in private Script Properties; do not print those values. Connected-mode clinical data and authentication tokens must not be persisted in browser local storage. See `docs/CLINICAL_METHODS.md` and `docs/USER_GUIDE.md`.
+Database migrations are additive and preserve historical regimens and audit events. Staff-request metadata is stored in private Script Properties; do not print those values. Connected-mode clinical data and ID tokens must not be persisted in browser storage; only the Firebase refresh token is kept in sessionStorage (owner-approved) so a page refresh keeps staff signed in. New interface text needs an Arabic entry in `app/js/ui-language.mjs`. See `docs/CLINICAL_METHODS.md` and `docs/USER_GUIDE.md`.
 
 ## Repository layout
 
@@ -52,6 +52,14 @@ Database migrations are additive and preserve historical regimens and audit even
 ## Code style
 
 All code is formatted with Prettier (`.prettierrc.json`). Run `npm run format` before committing; CI runs `npm run format:check` and fails on unformatted code. Write readable code: no hand-minified one-line functions.
+
+Frontend imports and asset links always use `?v=__BUILD__` (e.g. `import { x } from './date-utils.mjs?v=__BUILD__'`). The Pages workflow replaces it with the commit id, so every deploy refreshes browser caches. Never hand-write version tags: two different tags on one file make the browser load it twice.
+
+Backend reads go through `allRows_`/`findRow_`, which use a per-request cache (`requestCache_` in `Database.gs`). It is cleared at the start of each request and when `withLock_` acquires the lock; `append_`/`replace_` invalidate the tab they write. Do every write inside `withLock_`, never keep data between requests (e.g. in `CacheService`) without the owner's approval, and change `CLINIC_WORKSPACE` only through `saveWorkspaceState_`.
+
+Apps Script loads `.gs` files in order: top-level `const` values must not reference functions from other files (build such tables inside a function, like `actions_()`). New backend actions are added to `actions_()` in `Security.gs`.
+
+Sheets returns date cells as `Date` objects; `allRows_` converts them back to `yyyy-MM-dd` text. Keep using `tests/helpers/sheets.mjs`, which reproduces this, for backend tests.
 
 ## Tests and app review
 
