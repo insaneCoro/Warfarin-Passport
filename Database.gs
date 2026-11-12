@@ -1,6 +1,6 @@
 /** Warfarin Passport — Google Sheets storage. Prototype only, no real patient data. */
 const SCHEMA = {
-  Patients:['id','mrn','name','dob','phone','caregiver','caregiverPhone','diagnosis','targetLow','targetHigh','enrollmentDate','enrollmentInr','status','createdAt','updatedAt','createdBy','rowVersion','warfarinStartDate'],
+  Patients:['id','mrn','name','dob','phone','caregiver','caregiverPhone','diagnosis','targetLow','targetHigh','enrollmentDate','enrollmentInr','status','createdAt','updatedAt','createdBy','rowVersion','warfarinStartDate','riskLevel','riskCategory','riskReason','riskReviewDate','riskUpdatedAt','riskUpdatedBy'],
   INR_Results:['id','patientId','testDate','inr','enteredAt','enteredBy','encounterId','targetLow','targetHigh'],
   Encounters:['id','requestId','patientId','testDate','inr','note','nextInrDate','status','createdAt','createdBy','holdInstruction','patientInstructions','reviewFactors'],
   Dose_Plans:['id','patientId','encounterId','effectiveDate','sun','mon','tue','wed','thu','fri','sat','weeklyMg','createdAt','createdBy','previousDaily','previousWeeklyMg','percentChange','inr','reason','nextInrDate','approvedBy','approvedAt'],
@@ -77,7 +77,7 @@ function migrateDatabase(){return withLock_(()=>{
  });
  return 'Additive migration complete';
 })}
-const CLINIC_RELEASE='clinic-workspace-v1';
+const CLINIC_RELEASE='clinic-risk-v2';
 function ensureSchemaForRelease_(user){
  if(user.role!=='admin')return;
  const cache=CacheService.getScriptCache(),key='schema-'+CLINIC_RELEASE;

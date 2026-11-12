@@ -1,6 +1,17 @@
 /** CRUD operations on Google Sheets. User identity is verified via signed gateway assertion. */
 function withLock_(fn){const lock=LockService.getScriptLock();lock.waitLock(20000);try{return fn()}finally{lock.releaseLock()}}
 function patientView_(p){const o={...p};delete o.__row;return o}
+function riskSnapshot_(p){return {riskLevel:p.riskLevel||'routine',riskCategory:p.riskCategory||'',riskReason:p.riskReason||'',riskReviewDate:p.riskReviewDate||''};}
+function riskInput_(p,existing={}){
+ const riskLevel=clean_(p.riskLevel??existing.riskLevel??'routine',20);
+ if(!['routine','high'].includes(riskLevel))throw Error('Select routine or high risk');
+ if(riskLevel==='routine')return {riskLevel,riskCategory:'',riskReason:'',riskReviewDate:''};
+ const riskCategory=clean_(p.riskCategory??existing.riskCategory,30),riskReason=clean_(p.riskReason??existing.riskReason,1000),riskReviewDate=clean_(p.riskReviewDate??existing.riskReviewDate,10);
+ if(!['bleeding','thrombosis','both','other'].includes(riskCategory))throw Error('Choose the high-risk category');
+ if(!riskReason)throw Error('Document why this patient is high risk');
+ if(riskReviewDate)requireDate_(riskReviewDate);
+ return {riskLevel,riskCategory,riskReason,riskReviewDate};
+}
 function patientInput_(x,existing){
  const mrn=clean_(x.mrn??existing?.mrn,80).toUpperCase(),name=clean_(x.name??existing?.name,180),dob=clean_(x.dob??existing?.dob,10),diagnosis=clean_(x.diagnosis??existing?.diagnosis,350);
  if(!mrn.startsWith('DEMO-'))throw Error('Synthetic DEMO- identifiers only');
@@ -13,12 +24,22 @@ function patientInput_(x,existing){
  const enInr=numericOrBlank_(x.enrollmentInr??existing?.enrollmentInr);
  if(enInr!==''&&(enInr<=0||enInr>20))throw Error('Invalid enrollment INR');
  const warfarinStartDate=clean_(x.warfarinStartDate??existing?.warfarinStartDate,10);if(warfarinStartDate){requireDate_(warfarinStartDate);if(warfarinStartDate>today_())throw Error('Warfarin start date cannot be in the future');}
- return {mrn,name,dob,diagnosis,warfarinStartDate,phone:clean_(x.phone??existing?.phone,40),caregiver:clean_(x.caregiver??existing?.caregiver,120),caregiverPhone:clean_(x.caregiverPhone??existing?.caregiverPhone,40),targetLow:low,targetHigh:high,enrollmentDate:enroll,enrollmentInr:enInr};
+ return {...riskInput_(x,existing),mrn,name,dob,diagnosis,warfarinStartDate,phone:clean_(x.phone??existing?.phone,40),caregiver:clean_(x.caregiver??existing?.caregiver,120),caregiverPhone:clean_(x.caregiverPhone??existing?.caregiverPhone,40),targetLow:low,targetHigh:high,enrollmentDate:enroll,enrollmentInr:enInr};
 }
-function patientsList_(p,user){const q=clean_(p.query,150).toLowerCase();return allRows_('Patients').filter(v=>!['Archived','Importing'].includes(v.status)&&(!q||[v.mrn,v.name,v.phone].some(s=>String(s).toLowerCase().includes(q)))).slice(0,200).map(v=>({id:v.id,mrn:v.mrn,name:v.name,dob:v.dob,diagnosis:v.diagnosis,targetLow:v.targetLow,targetHigh:v.targetHigh,status:v.status}));}
+function patientsList_(p,user){const q=clean_(p.query,150).toLowerCase();return allRows_('Patients').filter(v=>!['Archived','Importing'].includes(v.status)&&(!q||[v.mrn,v.name,v.phone].some(s=>String(s).toLowerCase().includes(q)))).slice(0,200).map(v=>({id:v.id,mrn:v.mrn,name:v.name,dob:v.dob,diagnosis:v.diagnosis,targetLow:v.targetLow,targetHigh:v.targetHigh,status:v.status,...riskSnapshot_(v)}));}
 function patientGet_(p,user){const record=requirePatient_(clean_(p.patientId,80)),id=record.id;return {approvals:allRows_('Audit_Log').filter(v=>v.action==='decision.approve'&&allRows_('Encounters').some(e=>e.id===v.recordId&&e.patientId===id)).map(patientView_),patient:patientView_(record),results:allRows_('INR_Results').filter(v=>v.patientId===id&&allRows_('Encounters').some(e=>e.id===v.encounterId&&e.status==='Complete')).map(patientView_),encounters:allRows_('Encounters').filter(v=>v.patientId===id&&v.status==='Complete').map(patientView_),dosePlans:allRows_('Dose_Plans').filter(v=>v.patientId===id&&allRows_('Encounters').some(e=>e.id===v.encounterId&&e.status==='Complete')).map(patientView_),followups:allRows_('Follow_Ups').filter(v=>v.patientId===id).map(patientView_),attempts:allRows_('Followup_Attempts').filter(v=>v.patientId===id).map(patientView_),inventory:allRows_('Inventory').filter(v=>v.patientId===id).map(patientView_),notes:allRows_('Clinical_Notes').filter(v=>v.patientId===id).map(patientView_)};}
-function patientCreate_(p,user){return withLock_(()=>{const data=patientInput_(p);if(allRows_('Patients').some(x=>String(x.mrn).toUpperCase()===data.mrn))throw Error('MRN already exists');const id=Utilities.getUuid();append_('Patients',{...data,id,status:'Active',createdAt:now_(),updatedAt:now_(),createdBy:user.uid,rowVersion:1});audit_(user,'patient.create','Patients',id,'New patient registered');return {id,mrn:data.mrn}})}
-function patientUpdate_(p,user){return withLock_(()=>{const id=clean_(p.patientId,80),old=requirePatient_(id);if(Number(p.expectedVersion)!==Number(old.rowVersion))throw Error('Record changed by another user. Reload before editing.');const data=patientInput_(p,old);if(data.mrn!==String(old.mrn).toUpperCase()&&allRows_('Patients').some(x=>x.id!==id&&String(x.mrn).toUpperCase()===data.mrn))throw Error('MRN already exists');replace_('Patients',{...old,...data,updatedAt:now_(),rowVersion:Number(old.rowVersion)+1});audit_(user,'patient.update','Patients',id,'Demographic/clinical profile updated');return {id,rowVersion:Number(old.rowVersion)+1}})}
+function patientCreate_(p,user){return withLock_(()=>{const data=patientInput_(p);if(allRows_('Patients').some(x=>String(x.mrn).toUpperCase()===data.mrn))throw Error('MRN already exists');const id=Utilities.getUuid();append_('Patients',{...data,id,status:'Active',createdAt:now_(),updatedAt:now_(),createdBy:user.uid,rowVersion:1,riskUpdatedAt:data.riskLevel==='high'?now_():'',riskUpdatedBy:data.riskLevel==='high'?user.uid:''});if(data.riskLevel==='high')audit_(user,'patient.risk.update','Patients',id,{before:null,after:riskSnapshot_(data)});audit_(user,'patient.create','Patients',id,'New patient registered');return {id,mrn:data.mrn}})}
+function patientUpdate_(p,user){return withLock_(()=>{
+ const id=clean_(p.patientId,80),old=requirePatient_(id);
+ if(Number(p.expectedVersion)!==Number(old.rowVersion))throw Error('Record changed by another user. Reload before editing.');
+ const data=patientInput_(p,old);
+ if(data.mrn!==String(old.mrn).toUpperCase()&&allRows_('Patients').some(x=>x.id!==id&&String(x.mrn).toUpperCase()===data.mrn))throw Error('MRN already exists');
+ const riskChanged=JSON.stringify(riskSnapshot_(old))!==JSON.stringify(riskSnapshot_(data));
+ if(riskChanged)audit_(user,'patient.risk.update','Patients',id,{before:riskSnapshot_(old),after:riskSnapshot_(data)});
+ replace_('Patients',{...old,...data,updatedAt:now_(),rowVersion:Number(old.rowVersion)+1,riskUpdatedAt:riskChanged?now_():old.riskUpdatedAt||'',riskUpdatedBy:riskChanged?user.uid:old.riskUpdatedBy||''});
+ audit_(user,'patient.update','Patients',id,{before:patientView_(old),after:data});
+ return {id,rowVersion:Number(old.rowVersion)+1};
+})}
 function encounterCreate_(p,user){return withLock_(()=>{
  const patient=requirePatient_(clean_(p.patientId,80));const key=clean_(p.requestId,100);if(!/^[a-z0-9-]{16,100}$/i.test(key))throw Error('Missing idempotency request ID');
  const existing=findRow_('Encounters','requestId',key);if(existing){if(existing.patientId!==patient.id||existing.createdBy!==user.uid)throw Error('Request ID collision');if(existing.status!=='Complete')throw Error('Partial save needs administrator reconciliation; do not submit a new request ID');return {id:existing.id,status:existing.status,alreadyExists:true};}
@@ -90,26 +111,27 @@ function demoSeed_(p,user){
    [1,74,'Atrial fibrillation',[2,3],[2.2,2.6,3.2,2.9,2.5,2.6],[5,5,5,5,5,5,5],-2,14],
    [2,67,'Mechanical mitral valve',[2.5,3.5],[3.0,3.2,2.3,2.9,3.8,3.4],[5,5,7.5,5,5,7.5,5],1,8],
    [3,82,'Venous thromboembolism',[2,3],[2.1,1.9,2.4,2.2,2.1,1.8],[3,3,3,3,3,3,3],-5,12],
-   [4,78,'Atrial fibrillation',[2,3],[2.4,2.9,2.8,2.3,2.6,2.5],[4,4,4,4,4,4,4],4,29]
+   [4,78,'Atrial fibrillation',[2,3],[2.4,2.9,2.8,2.3,2.6,2.5],[4,4,4,4,4,4,4],4,29],
+   ...additionalDemoProfiles_().map(c=>[c.n,c.age,c.diagnosis,c.target,c.inrs,c.daily,c.nextOffset,c.stock,c])
   ];
   const result={created:[],skipped:[]};
-  profiles.forEach(([n,age,diagnosis,target,inrs,daily,nextOffset,stock])=>{
+  profiles.forEach(([n,age,diagnosis,target,inrs,daily,nextOffset,stock,meta={}])=>{
    const id='synthetic-fixture-v1-p'+n,mrn='DEMO-'+String(n).padStart(3,'0'),encounterId=id+'-encounter';
    let patient=snapshot.Patients.find(x=>x.id===id);
    const collision=snapshot.Patients.find(x=>String(x.mrn).toUpperCase()===mrn&&x.id!==id);
    // Completed/edited/archived samples and MRN collisions are always preserved.
    if(collision||(patient&&patient.status!=='Importing')){result.skipped.push(mrn);return;}
    const anchor=patient?plusCalendarDays_(String(patient.enrollmentDate),75):today_(),stamp=now_();
-   const baseline=plusCalendarDays_(anchor,-7),next=plusCalendarDays_(anchor,nextOffset);
+   const baseline=plusCalendarDays_(anchor,meta.historyOffsets?.at(-1)??-7),effective=plusCalendarDays_(anchor,meta.regimenOffset??-7),next=plusCalendarDays_(anchor,nextOffset);
    const label='Synthetic sample fixture v1. Fictional history for development only; not a clinical prescription or approval.';
    if(!patient){
-    patient={id,mrn,name:'Sample Patient '+String.fromCharCode(64+n),dob:(Number(anchor.slice(0,4))-age)+'-01-15',phone:'050000000'+n,caregiver:'Demo caregiver',caregiverPhone:'050111000'+n,diagnosis,targetLow:target[0],targetHigh:target[1],enrollmentDate:plusCalendarDays_(anchor,-75),enrollmentInr:inrs[0],status:'Importing',createdAt:stamp,updatedAt:stamp,createdBy:user.uid,rowVersion:1};
+    patient={id,mrn,name:'Sample Patient '+String.fromCharCode(64+n),dob:(Number(anchor.slice(0,4))-age)+'-01-15',phone:'050000000'+n,caregiver:'Demo caregiver',caregiverPhone:'050111000'+n,diagnosis,targetLow:target[0],targetHigh:target[1],enrollmentDate:plusCalendarDays_(anchor,-75),enrollmentInr:inrs[0],status:'Importing',createdAt:stamp,updatedAt:stamp,createdBy:user.uid,rowVersion:1,warfarinStartDate:meta.warfarinStartOffset?plusCalendarDays_(anchor,meta.warfarinStartOffset):'',riskLevel:meta.riskLevel||'routine',riskCategory:meta.riskCategory||'',riskReason:meta.riskReason||'',riskReviewDate:meta.riskLevel==='high'?anchor:'',riskUpdatedBy:meta.riskLevel==='high'?user.uid:'',riskUpdatedAt:meta.riskLevel==='high'?stamp:''};
     insert('Patients',patient,'patient.create');
    }
    insert('Encounters',{id:encounterId,requestId:encounterId,patientId:id,testDate:baseline,inr:inrs.at(-1),note:label,nextInrDate:next,status:'Pending',createdAt:stamp,createdBy:user.uid},'demo.encounter.import');
    // Historical tests belong to this explicitly labelled fixture-import encounter.
-   inrs.forEach((inr,i)=>insert('INR_Results',{id:id+'-inr-'+i,patientId:id,testDate:plusCalendarDays_(anchor,-42+i*7),inr,enteredAt:stamp,enteredBy:user.uid,encounterId,targetLow:target[0],targetHigh:target[1]},'inr.enter'));
-   insert('Dose_Plans',{id:id+'-dose',patientId:id,encounterId,effectiveDate:baseline,...Object.fromEntries(['sun','mon','tue','wed','thu','fri','sat'].map((day,i)=>[day,daily[i]])),weeklyMg:daily.reduce((a,b)=>a+b,0),previousDaily:'',previousWeeklyMg:'',percentChange:'',inr:inrs.at(-1),reason:label,nextInrDate:next,approvedBy:'',approvedAt:'',createdAt:stamp,createdBy:user.uid},'dose.change');
+   inrs.forEach((inr,i)=>insert('INR_Results',{id:id+'-inr-'+i,patientId:id,testDate:plusCalendarDays_(anchor,meta.historyOffsets?.[i]??(-42+i*7)),inr,enteredAt:stamp,enteredBy:user.uid,encounterId,targetLow:target[0],targetHigh:target[1]},'inr.enter'));
+   insert('Dose_Plans',{id:id+'-dose',patientId:id,encounterId,effectiveDate:effective,...Object.fromEntries(['sun','mon','tue','wed','thu','fri','sat'].map((day,i)=>[day,daily[i]])),weeklyMg:daily.reduce((a,b)=>a+b,0),previousDaily:'',previousWeeklyMg:'',percentChange:'',inr:inrs.at(-1),reason:label,nextInrDate:next,approvedBy:'',approvedAt:'',createdAt:stamp,createdBy:user.uid},'dose.change');
    insert('Follow_Ups',{id:id+'-followup',patientId:id,encounterId,inrCheckDate:next,callDueDate:plusCalendarDays_(next,2),status:'Pending',createdAt:stamp},'followup.schedule');
    insert('Inventory',{id:id+'-stock',patientId:id,strengthMg:5,quantity:stock,confirmedDate:plusCalendarDays_(anchor,-10),updatedAt:stamp,updatedBy:user.uid},'demo.inventory.import');
    insert('Clinical_Notes',{id:id+'-note',patientId:id,encounterId,noteDate:baseline,text:label,createdAt:stamp,createdBy:user.uid,supersedes:''},'note.create');
@@ -157,3 +179,10 @@ function messageCreate_(p,user){return withLock_(()=>{
  audit_(user,'message.create','Team_Messages',id,{before:null,after:message});
  return message;
 })}
+
+/** Fixed extended synthetic cases; kept in sync with additional-cases.mjs by tests. */
+function additionalDemoProfiles_(){return [
+ {n:5,age:76,diagnosis:'Atrial fibrillation',target:[2,3],inrs:[2.4,1.7,3.8,2.6,4.9,2.1,3.3,4.0],daily:[5,5,5,5,5,5,5],nextOffset:1,stock:20,historyOffsets:[-196,-168,-140,-112,-84,-56,-28,0],regimenOffset:-28,warfarinStartOffset:-365,riskLevel:'high',riskCategory:'bleeding',riskReason:'Synthetic case: previous gastrointestinal bleeding and variable INR; clinician review required.'},
+ {n:6,age:58,diagnosis:'Mechanical mitral valve',target:[2.5,3.5],inrs:[2.9,3.8,2.1,3.5,4.3,2.8,2.0,1.6],daily:[5,7.5,5,7.5,5,7.5,5],nextOffset:1,stock:6,historyOffsets:[-196,-168,-140,-112,-84,-56,-28,0],regimenOffset:-28,warfarinStartOffset:-365,riskLevel:'high',riskCategory:'thrombosis',riskReason:'Synthetic case: mechanical mitral valve with a subtherapeutic INR; prompt clinician assessment.'},
+ {n:7,age:72,diagnosis:'Recurrent venous thromboembolism',target:[2,3],inrs:[2.3,2.8,1.4,3.4,2.0,4.5,3.1,6.2],daily:[2.5,5,2.5,5,2.5,5,2.5],nextOffset:1,stock:18,historyOffsets:[-196,-168,-140,-112,-84,-56,-28,0],regimenOffset:-28,warfarinStartOffset:-365,riskLevel:'high',riskCategory:'both',riskReason:'Synthetic case: recurrent thrombosis history, labile INR and a recent interacting-medicine concern.'}
+];}
