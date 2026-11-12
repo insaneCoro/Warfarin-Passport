@@ -7,7 +7,8 @@ const {chromium}=require('playwright');
   await page.route('https://identitytoolkit.googleapis.com/**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({idToken:'synthetic-mocked-token',expiresIn:3600})}));
   await page.route('https://warfarin-passport-api.m-k-altaher.workers.dev/**',async route=>{
    const {action,params}=route.request().postDataJSON();let result;
-   if(action==='auth.me')result={uid:'synthetic-admin',role,displayName:'Test staff'};
+   if(action==='users.list')result=[];
+   else if(action==='auth.me')result={uid:'synthetic-admin',role,displayName:'Test staff'};
    else if(action==='patients.list')result=loaded?[1,2,3,4].map(n=>({id:'sample-'+n})):[];
    else if(action==='demo.seed'){imports++;if(params.confirmSynthetic!==true)throw Error('Missing explicit intent');loaded=true;result={created:['DEMO-001','DEMO-002','DEMO-003','DEMO-004'],skipped:[]};}
    else if(action==='patients.get'){const n=Number(params.patientId.slice(-1));result={patient:{id:params.patientId,mrn:'DEMO-00'+n,name:'Sample Patient '+String.fromCharCode(64+n),dob:'1950-01-15',diagnosis:'Synthetic test',targetLow:2,targetHigh:3,status:'Active'},results:[],dosePlans:[],encounters:[],followups:[],inventory:[],notes:[],attempts:[],approvals:[]};}

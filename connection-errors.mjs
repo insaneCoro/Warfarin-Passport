@@ -2,6 +2,7 @@
 export function backendErrorCode(message='') {
  const known={
   'Server signing key is missing':'BACKEND_SECRET_MISSING',
+  'Clinic is busy saving another request. Please wait a moment and retry.':'SERVER_BUSY',
   'Unauthorized request':'SIGNING_KEY_MISMATCH',
   'Request expired':'SIGNED_REQUEST_EXPIRED',
   'User is not approved':'STAFF_NOT_APPROVED',
@@ -15,6 +16,7 @@ export function backendErrorCode(message='') {
  return 'API_REJECTED';
 }
 const messages={
+ SERVER_BUSY:'Clinic is busy saving another request. Please wait a moment and retry.',
  BACKEND_SECRET_MISSING:'Apps Script is missing a signing secret of at least 32 characters.',
  SIGNING_KEY_MISMATCH:'The signing secrets in Cloudflare and Apps Script do not match. Replace both with the same value.',
  SIGNED_REQUEST_EXPIRED:'Apps Script rejected the signed request timestamp. Check the deployed Worker version.',

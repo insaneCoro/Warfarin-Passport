@@ -1745,3 +1745,7 @@ input[type=checkbox] {
     scroll-behavior:auto!important
   }
 }
+.admin-layout {display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,1fr);gap:18px;margin:18px 0;align-items:start}
+.staff-steps {font-size:11px;line-height:1.8;color:#718496;padding-left:18px;margin:0 0 5px}
+#staff-result {font-size:11px;color:#a74656;line-height:1.6;margin:0}
+@media(max-width:1020px){.admin-layout{grid-template-columns:1fr}}
