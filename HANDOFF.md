@@ -1,8 +1,8 @@
 # Handoff
-**Status:** IN PROGRESS – Claude
+**Status:** READY
 **Last agent:** Claude
 **Date:** 2026-11-12
-**Last PR:** #23 (merged: yes)
+**Last PR:** #27 (merged: yes)
 **Backend (.gs) changed:** yes — live deployment version: 14 (previous: 13, for rollback)
 **Live backend matches main:** yes
 
@@ -14,7 +14,8 @@ Owner requests: fix "Invalid time value", remove patient login, tidy the repo, r
 - **#20 — Patient/caregiver login removed** (owner request). Portal page, `portal.*` actions, patient access management, patient request inbox and "Patient portal" contact method removed. `Patient_Access`, `Patient_Requests`, `Patient_Replies` removed from `SCHEMA`; **the existing Sheet tabs and rows were not touched**. Release `clinic-staff-care-v5`.
 - **#21 — Faster, less redundant.** Backend per-request cache (spreadsheet opened once, each tab read once per request; cleared per request and on lock; writes invalidate). After a save the app reloads only the edited patient. One `?v=__BUILD__` asset tag stamped at deploy (fixed `review-context.mjs` loading twice). Translation batched per frame. One `actions_()` table in `dispatch_`. Removed list+get fallback, `async-utils.mjs` and portal CSS.
 - **#22 — Stay signed in, faster sign-in, proper Arabic** (owner reports: slow login, refresh logged out, poor Arabic/English). Firebase refresh token kept in `sessionStorage` (survives refresh, cleared on tab close/sign-out; no patient data or ID token stored). `auth.me` with `includeWorkspace: true` returns patients in the same request: sign-in and restore = one Apps Script call. New translation layer in `ui-language.mjs` (~380 phrases, composite phrases, Arabic dates, number patterns, attributes; untranslated English gets `dir="auto"` and RTL marks around separators). New `refresh-session` and `language` browser tests; 3-minute per-test / 15-minute CI job limits.
-- **#23 — this handoff** plus AGENTS.md conventions (asset tag, backend cache, file-order rule, Sheets dates).
+- **#26 — Design overhaul** (owner: "pro design, standing out, user friendly"). New design system `app/css/theme.css` (tokens, Plus Jakarta Sans / IBM Plex Sans Arabic, cards, buttons, badges, tables, forms, dialogs); all base font sizes below 12 px scaled up; compact urgent card on the dashboard and a one-line strip elsewhere; sticky top bar with refresh icon and user initials; dashboard greeting; phone bottom tab bar with short labels and bottom-sheet dialogs; passport sticky section tabs. Frontend only (no backend change). Screenshots refreshed.
+- **#23, #27 — handoffs** plus AGENTS.md conventions (asset tag, backend cache, file-order rule, Sheets dates).
 - Tests at the end of the turn: **unit 75/75, browser 14/14**, formatting clean, GitHub `test` and `browser-test` green on every PR.
 - Backend published from `main` after each backend PR: v10 → 11 (#18), → 12 (#20), → 13 (#21), → 14 (#22); final read-only check: `Deployed source matches this release: yes`.
 
@@ -36,6 +37,7 @@ Owner requests: fix "Invalid time value", remove patient login, tidy the repo, r
 - Never re-run `setupDatabase`/`bootstrapAdmin`, recreate the database/deployment, expose secrets, fabricate signatures, or skip/disable tests. Keep rollback version 13.
 
 ## Suggested next tasks
+- Style changes go in `app/css/theme.css` (design tokens at the top). `styles.css`/`care.css` are the older base; merge them into the theme over time as a refactor-only task.
 - Owner: fix the Cloudflare preview build setting and switch Pages source to GitHub Actions (steps above).
 - Split `app/js/app.js` (~1,600 lines) into view modules (dashboard, passport, staff, messages) — refactor-only PR.
 - Measure real request times in the live app (Apps Script cold starts remain ~1–3 s and cannot be removed by code).
@@ -46,3 +48,4 @@ Owner requests: fix "Invalid time value", remove patient login, tidy the repo, r
 | 2026-11-12 | Codex | #15 (merged) | Standalone login and staff requests; guided care; reviewed bilingual messaging; isolated patient portal; exhaustive 80-unit/12-browser verification; republished from main | 10 (previous 9) |
 | 2026-11-12 | Codex | #16 (merged) | Shared turn-taking/approval rules, exact Claude instruction, tested feature inventory, deployment evidence and READY handoff; documentation only | 10 (unchanged; previous 9) |
 | 2026-11-12 | Claude | #17–#23 (merged) | Date-cell fix; repo reorganized + Prettier + browser tests in CI; patient login removed; per-request backend cache, single-patient refresh, asset versioning, redundancy cleanup; sign-in persistence + one-call login; full Arabic interface; handoff + conventions | 14 (previous 13) |
+| 2026-11-12 | Claude | #25–#27 (merged) | Design overhaul: design system, readable type, compact urgent alerts, phone bottom tab bar, bottom-sheet dialogs | 14 (unchanged; previous 13) |
