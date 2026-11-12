@@ -36,10 +36,21 @@ function doPost(e){
   return ContentService.createTextOutput(JSON.stringify(output)).setMimeType(ContentService.MimeType.JSON);
 }
 function constantTimeEqual_(a,b){if(typeof a!=='string'||typeof b!=='string')return false;let diff=a.length^b.length;for(let i=0;i<Math.max(a.length,b.length);i++)diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return diff===0}
-function authorized_(identity){const u=findRow_('Users','firebaseUid',identity.uid);if(!u||String(u.active).toLowerCase()!=='true'||!['admin','subadmin','clinician'].includes(u.role))throw Error('User is not approved');
-  // Email is supplementary only; never trust identity from browser without signed gateway assertion.
-  if(u.email&&identity.email&&String(u.email).toLowerCase()!==String(identity.email).toLowerCase())throw Error('User email mismatch');
-  return {uid:u.firebaseUid,role:u.role,email:u.email,displayName:u.displayName};
+function authorized_(identity){
+ if(!identity.uid||String(identity.uid).startsWith('invite:'))throw Error('User is not approved');
+ let u=findRow_('Users','firebaseUid',identity.uid);
+ if(!u&&identity.email&&identity.emailVerified===true){
+  u=withLock_(()=>{
+   const bound=findRow_('Users','firebaseUid',identity.uid);if(bound)return bound;
+   const matches=allRows_('Users').filter(r=>String(r.email).toLowerCase()===String(identity.email).toLowerCase());
+   if(matches.length!==1||!String(matches[0].firebaseUid).startsWith('invite:')||String(matches[0].active).toLowerCase()!=='true')throw Error('User is not approved');
+   const invitation=matches[0],record={...invitation,firebaseUid:identity.uid,updatedAt:now_()};
+   replace_('Users',record);audit_({uid:identity.uid,role:record.role},'users.invitation.accept','Users',identity.uid,JSON.stringify({invitation:invitation.firebaseUid,email:record.email}));return record;
+  });
+ }
+ if(!u||String(u.active).toLowerCase()!=='true'||!['admin','subadmin','clinician'].includes(u.role))throw Error('User is not approved');
+ if(u.email&&String(u.email).toLowerCase()!==String(identity.email||'').toLowerCase())throw Error('User email mismatch');
+ return {uid:u.firebaseUid,role:u.role,email:u.email,displayName:u.displayName};
 }
 function requireAdmin_(user){if(user.role!=='admin')throw Error('Admin permission required')}
 function dispatch_(payload){const user=authorized_(payload.user),a=payload.action,p=payload.params||{};

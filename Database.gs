@@ -77,7 +77,7 @@ function migrateDatabase(){return withLock_(()=>{
  });
  return 'Additive migration complete';
 })}
-const CLINIC_RELEASE='clinic-admin-v1';
+const CLINIC_RELEASE='clinic-invitations-v1';
 function ensureSchemaForRelease_(user){
  if(user.role!=='admin')return;
  const cache=CacheService.getScriptCache(),key='schema-'+CLINIC_RELEASE;

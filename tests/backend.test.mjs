@@ -35,4 +35,21 @@ test('message and audit records cannot be overwritten by storage replace helper'
 function seedAll(c,params,user){const created=new Set(),skipped=new Set();for(let n=0;n<12;n++){const result=c.demoSeed_(params,user);result.created.forEach(id=>created.add(id));result.skipped.forEach(id=>skipped.add(id));created.forEach(id=>skipped.delete(id));if(!result.remaining)return {created:[...created],skipped:[...skipped]};}throw Error('Fixture import did not converge');}
 test('one sample request processes at most one patient, reports progress and resumes safely',()=>{const {c,rows}=sampleBackend(),u={uid:'admin',role:'admin'};const r=c.demoSeed_({confirmSynthetic:true},u);assert.equal(r.created.length,1);assert.equal(r.remaining,3);assert.equal(r.total,4);assert.equal(rows.INR_Results.length,6);const next=c.demoSeed_({confirmSynthetic:true},u);assert.equal(next.created.length,1);assert.equal(next.remaining,2);});
 test('database lock contention gives a fixed English error before mutation begins',()=>{const {c}=backend();let called=false,released=false;c.LockService={getScriptLock:()=>({tryLock:()=>false,releaseLock:()=>{released=true}})};assert.throws(()=>c.withLock_(()=>{called=true}),error=>error.code==='SERVER_BUSY'&&/Clinic is busy/.test(error.message));assert.equal(called,false);assert.equal(released,false);});
-test('administrators cannot revoke their own access and non-admins cannot manage users',()=>{const {c,rows}=backend();rows.Users.push({firebaseUid:'admin',email:'admin@example.test',role:'admin',active:'true',__row:2});assert.throws(()=>c.userUpsert_({uid:'admin',email:'admin@example.test',role:'clinician',active:true},{uid:'admin',role:'admin'}),/own administrator/);assert.throws(()=>c.userUpsert_({uid:'other',email:'other@example.test',role:'clinician'},{uid:'staff',role:'subadmin'}),/Admin/);assert.equal(rows.Users.length,1);});
+test('administrators cannot revoke their own access and non-admins cannot manage users',()=>{const {c,rows}=backend();rows.Users.push({firebaseUid:'admin',email:'admin@example.test',role:'admin',active:'true',__row:2});assert.throws(()=>c.userUpsert_({uid:'admin',email:'admin@example.test',displayName:'Admin',role:'clinician',active:true},{uid:'admin',role:'admin'}),/own administrator/);assert.throws(()=>c.userUpsert_({uid:'other',email:'other@example.test',role:'clinician'},{uid:'staff',role:'subadmin'}),/Admin/);assert.equal(rows.Users.length,1);});
+
+test('admin creates email approval without UID and invitation binds only verified identity',()=>{
+ const {c,rows}=backend(),admin={uid:'admin',role:'admin'};
+ const invited=c.userUpsert_({email:'New@example.test',displayName:'New staff',role:'clinician',createdBy:'forged'},admin);
+ assert.match(invited.uid,/^invite:/);assert.equal(rows.Users.length,1);assert.equal(rows.Audit_Log[0].actorUid,'admin');
+ assert.throws(()=>c.authorized_({uid:'new-auth-uid',email:'new@example.test',emailVerified:false}),/not approved/);
+ assert.throws(()=>c.authorized_({uid:'wrong',email:'other@example.test',emailVerified:true}),/not approved/);
+ const accepted=c.authorized_({uid:'new-auth-uid',email:'new@example.test',emailVerified:true});assert.equal(accepted.uid,'new-auth-uid');assert.equal(accepted.role,'clinician');assert.equal(rows.Users.length,1);assert.equal(rows.Audit_Log.at(-1).action,'users.invitation.accept');
+ assert.throws(()=>c.authorized_({uid:'second-uid',email:'new@example.test',emailVerified:true}),/not approved/);
+});
+test('unapproved, disabled and duplicate email invitations cannot grant access',()=>{
+ const {c,rows}=backend(),admin={uid:'admin',role:'admin'};
+ assert.throws(()=>c.userUpsert_({email:'new@example.test',displayName:'New',role:'admin'},{uid:'staff',role:'clinician'}),/Admin/);
+ c.userUpsert_({email:'new@example.test',displayName:'New',role:'subadmin',active:false},admin);
+ assert.throws(()=>c.authorized_({uid:'new',email:'new@example.test',emailVerified:true}),/not approved/);
+ assert.throws(()=>c.userUpsert_({email:'NEW@example.test',displayName:'New',role:'admin'},admin),/already exists/);assert.equal(rows.Users.length,1);
+});

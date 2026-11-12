@@ -1,4 +1,4 @@
-import {backendErrorCode, connectionErrorMessage, safeConnectionCode} from './connection-errors.mjs?v=admin-workflow-2';
+import {backendErrorCode, connectionErrorMessage, safeConnectionCode} from './connection-errors.mjs?v=invitations-1';
 import {firebaseSignInError} from './auth-errors.mjs';
 import config from './config.js?v=demo-and-staff-3';
 import {usesConnectedApi} from './mode-utils.mjs';
@@ -21,4 +21,19 @@ export async function api(action,params,attempt=0){
 export function patientFromApi(x){
  const p=x.patient;
  return {...p,results:x.results.map(r=>({id:r.id,date:r.testDate,value:r.inr,enteredBy:r.enteredBy,targetLow:r.targetLow,targetHigh:r.targetHigh})),dosePlans:x.dosePlans.map(d=>{const approval=x.approvals?.find(a=>a.recordId===d.encounterId);return {...d,date:d.effectiveDate,daily:['sun','mon','tue','wed','thu','fri','sat'].map(k=>Number(d[k])),previousDaily:d.previousDaily?JSON.parse(d.previousDaily):null,previousWeekly:d.previousWeeklyMg===''?null:d.previousWeeklyMg,weekly:d.weeklyMg,percentChange:d.percentChange===''?null:d.percentChange,enteredBy:d.createdBy,enteredAt:d.createdAt,approvedBy:approval?.actorUid,approvedAt:approval?.timestamp};}),encounters:x.encounters.map(e=>({...e,date:e.testDate,enteredBy:e.createdBy})),notes:x.notes.map(n=>({...n,date:n.noteDate,by:n.createdBy})),inventory:x.inventory.map(i=>({...i,strength:i.strengthMg,date:i.confirmedDate})),followups:x.followups.map(f=>({...f,inrDate:f.inrCheckDate,callDate:f.callDueDate,attempts:x.attempts.filter(a=>a.followupId===f.id).map(a=>({...a,actor:a.createdBy,timestamp:a.createdAt}))}))};
+}
+
+async function accountRequest(operation,body){
+ if(!connected)throw Error('Use Staff sign-in to manage your account');
+ const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:${operation}?key=${encodeURIComponent(config.firebaseApiKey)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const data=await r.json();if(!r.ok)throw Error('Account request could not be completed. If you already have an account, use Sign in or Reset password. Passwords must contain at least 12 characters.');return data;
+}
+export async function createStaffAccount(email,password){
+ if(String(password).length<12)throw Error('Use a password of at least 12 characters');
+ const data=await accountRequest('signUp',{email:String(email).trim(),password,returnSecureToken:true});
+ await accountRequest('sendOobCode',{requestType:'VERIFY_EMAIL',idToken:data.idToken});
+}
+export async function sendAccountEmail(email,password,verification=false){
+ if(verification){const data=await accountRequest('signInWithPassword',{email:String(email).trim(),password,returnSecureToken:true});await accountRequest('sendOobCode',{requestType:'VERIFY_EMAIL',idToken:data.idToken});}
+ else {try{await accountRequest('sendOobCode',{requestType:'PASSWORD_RESET',email:String(email).trim()});}catch{} }
 }
