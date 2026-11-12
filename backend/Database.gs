@@ -34,6 +34,8 @@ const SCHEMA = {
     'confirmedTabletStrength',
     'tabletStrengthVerifiedAt',
     'tabletStrengthVerifiedBy',
+    'ageText',
+    'testingSite',
   ],
   INR_Results: [
     'id',
@@ -417,7 +419,7 @@ function migrateDatabase() {
     return 'Additive migration complete';
   });
 }
-const CLINIC_RELEASE = 'clinic-staff-care-v5';
+const CLINIC_RELEASE = 'clinic-staff-care-v6';
 function ensureSchemaForRelease_(user) {
   if (user.role !== 'admin') return;
   const cache = CacheService.getScriptCache(),

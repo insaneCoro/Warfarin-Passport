@@ -51,10 +51,17 @@ function patientInput_(x, existing) {
     name = clean_(x.name ?? existing?.name, 180),
     dob = clean_(x.dob ?? existing?.dob, 10),
     diagnosis = clean_(x.diagnosis ?? existing?.diagnosis, 350);
-  if (!mrn.startsWith('DEMO-')) throw Error('Synthetic DEMO- identifiers only');
-  if (!mrn || !name || !dob || !diagnosis) throw Error('MRN, name, DOB, and diagnosis are required');
-  requireDate_(dob);
-  if (dob > today_()) throw Error('DOB cannot be in the future');
+  // Real record numbers are allowed only after the fictional development workspace has been reset.
+  if (workspaceState_().mode === 'development' && !mrn.startsWith('DEMO-'))
+    throw Error('Synthetic DEMO- identifiers only in the development workspace');
+  // Patients imported from the register may have only an age text, never an invented DOB.
+  const dobOptional = !!existing?.ageText;
+  if (!mrn || !name || (!dob && !dobOptional) || !diagnosis)
+    throw Error('MRN, name, DOB, and diagnosis are required');
+  if (dob) {
+    requireDate_(dob);
+    if (dob > today_()) throw Error('DOB cannot be in the future');
+  }
   const low = numericOrBlank_(x.targetLow ?? existing?.targetLow),
     high = numericOrBlank_(x.targetHigh ?? existing?.targetHigh);
   if ((low === '') !== (high === '') || (low !== '' && (low <= 0 || high <= low || high > 20)))
@@ -1637,5 +1644,136 @@ function staffRequestReview_(p, u) {
     );
     audit_(u, 'staff.request.approve', 'Users', r.uid, { role, displayName, requestId: r.id });
     return { id: r.id };
+  });
+}
+
+/**
+ * Admin import of existing patients (e.g. from the clinic's Excel register), in small batches.
+ * Only allowed after the fictional development workspace has been reset, so real and fictional
+ * records never mix. Nothing is invented: no date of birth, dose or approval is created. Each
+ * patient's dated INR results are kept under one labelled "imported history" encounter.
+ * Patients whose MRN already exists are skipped, so a repeated upload is safe.
+ */
+function patientsImport_(p, user) {
+  requireAdmin_(user);
+  if (workspaceState_().mode === 'development')
+    throw Error('Reset the fictional development workspace before importing real patients');
+  const rows = Array.isArray(p.rows) ? p.rows : [];
+  if (!rows.length || rows.length > 15) throw Error('Send between 1 and 15 patients per batch');
+  return withLock_(() => {
+    assertWorkspace_(p);
+    const result = { created: [], skipped: [], errors: [] };
+    const existing = new Set(allRows_('Patients').map((x) => String(x.mrn).toUpperCase()));
+    for (const row of rows) {
+      const mrn = clean_(row.mrn, 40).toUpperCase().replace(/\s+/g, '');
+      try {
+        if (!/^[A-Z0-9-]{3,40}$/.test(mrn)) throw Error('Missing or invalid MRN');
+        if (existing.has(mrn)) {
+          result.skipped.push(mrn);
+          continue;
+        }
+        const name = clean_(row.name, 180);
+        if (!name) throw Error('Missing patient name');
+        const low = numericOrBlank_(row.targetLow),
+          high = numericOrBlank_(row.targetHigh);
+        if ((low === '') !== (high === '') || (low !== '' && (low <= 0 || high <= low || high > 20)))
+          throw Error('Invalid target INR range');
+        const results = (Array.isArray(row.results) ? row.results : [])
+          .map((r) => ({ date: clean_(r.date, 10), inr: numericOrBlank_(r.inr) }))
+          .filter((r) => r.date && r.inr !== '');
+        for (const r of results) {
+          requireDate_(r.date);
+          if (r.date > today_()) throw Error('INR date in the future: ' + r.date);
+          if (r.inr <= 0 || r.inr > 20) throw Error('Invalid INR value: ' + r.inr);
+        }
+        results.sort((a, b) => a.date.localeCompare(b.date));
+        const enrollmentDate = clean_(row.enrollmentDate, 10);
+        if (enrollmentDate) requireDate_(enrollmentDate);
+        const enrollmentInr = numericOrBlank_(row.enrollmentInr);
+        const nextInrDate = clean_(row.nextInrDate, 10);
+        if (nextInrDate) requireDate_(nextInrDate);
+        const id = Utilities.getUuid(),
+          stamp = now_(),
+          label =
+            'Imported from the clinic Excel register on ' +
+            today_() +
+            '. Historical results as recorded there; no dose or clinician approval was imported.';
+        const patient = {
+          id,
+          mrn,
+          name,
+          dob: '',
+          ageText: clean_(row.ageText, 40),
+          phone: clean_(row.phone, 40),
+          caregiver: clean_(row.caregiver, 120),
+          caregiverPhone: '',
+          diagnosis: clean_(row.diagnosis, 350) || 'Not recorded',
+          testingSite: clean_(row.testingSite, 120),
+          targetLow: low,
+          targetHigh: high,
+          enrollmentDate,
+          enrollmentInr:
+            enrollmentInr === '' || (enrollmentInr > 0 && enrollmentInr <= 20) ? enrollmentInr : '',
+          status: 'Importing',
+          createdAt: stamp,
+          updatedAt: stamp,
+          createdBy: user.uid,
+          rowVersion: 1,
+          riskLevel: 'routine',
+        };
+        append_('Patients', patient);
+        audit_(user, 'patient.import', 'Patients', id, {
+          mrn,
+          source: 'excel-import',
+          results: results.length,
+        });
+        if (results.length) {
+          const encounterId = id + '-imported-history',
+            last = results.at(-1);
+          append_('Encounters', {
+            id: encounterId,
+            requestId: encounterId,
+            patientId: id,
+            testDate: last.date,
+            inr: last.inr,
+            note: label + (row.planNotes ? ' Plan notes: ' + clean_(row.planNotes, 600) : ''),
+            nextInrDate,
+            status: 'Pending',
+            createdAt: stamp,
+            createdBy: user.uid,
+          });
+          results.forEach((r, i) =>
+            append_('INR_Results', {
+              id: id + '-inr-' + i,
+              patientId: id,
+              testDate: r.date,
+              inr: r.inr,
+              enteredAt: stamp,
+              enteredBy: user.uid,
+              encounterId,
+              targetLow: low,
+              targetHigh: high,
+            }),
+          );
+          if (nextInrDate)
+            append_('Follow_Ups', {
+              id: id + '-followup',
+              patientId: id,
+              encounterId,
+              inrCheckDate: nextInrDate,
+              callDueDate: plusCalendarDays_(nextInrDate, 2),
+              status: 'Pending',
+              createdAt: stamp,
+            });
+          replace_('Encounters', { ...findRow_('Encounters', 'id', encounterId), status: 'Complete' });
+        }
+        replace_('Patients', { ...findRow_('Patients', 'id', id), status: 'Active', updatedAt: stamp });
+        existing.add(mrn);
+        result.created.push(mrn);
+      } catch (err) {
+        result.errors.push({ mrn: mrn || '(blank)', error: String(err.message).slice(0, 160) });
+      }
+    }
+    return result;
   });
 }

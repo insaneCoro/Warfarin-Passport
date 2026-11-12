@@ -38,3 +38,12 @@ Normal staff login skips completed fictional initialization. Read requests can r
 ## New staff who already verified their email
 
 Ask them to sign in again on the new main login page. A verified person without clinic access gets **Waiting for administrator approval**, not a patient workspace. Their request appears under **Admin & staff → Staff awaiting approval**. Confirm their identity, enter their name, choose their role and approve. They select **Check my access** to enter; no account recreation or Firebase-console work is needed. Existing administrators can also invite staff directly by email. Email verification alone never grants clinical access. Declined/disabled accounts cannot approve themselves.
+
+## Moving from fictional to real patients
+
+1. **Admin & staff → Reset development workspace.** This archives the fictional sample patients (their history stays in the database) and switches off automatic sample data. Real record numbers are accepted only after this step.
+2. **Admin & staff → Import patients from Excel.** Choose the clinic register (.xlsx). Check the preview and the "things to check" list, then select **Import**. The file is read in your browser and sent only to the clinic's own backend.
+   - Columns used: MRN, Patient name, Age, Mobile, Proxy name, Warfarin indication, PHC / testing site, Target INR ("2 to 3"), Last INR before enrollment, Enrollment date, each "Date of INR" with its INR, plan-change notes, Next INR (a date, or "2 WEEKS" = two weeks after the last INR).
+   - Nothing is invented: no date of birth (the age text is kept), no dose and no clinician approval. Enter the current dose and approve a plan in each patient's page.
+   - Patients whose MRN already exists are skipped, so uploading the same file again is safe (for example after adding rows).
+3. The fictional demo mode (`?mode=demo`) is switched off on the website.
