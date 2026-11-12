@@ -493,7 +493,8 @@ const ar = {
   // Signed-in staff screens
   Access: 'الصلاحية',
   'Not set': 'غير محدد',
-  'Clear form': 'مسح النموذج',
+  'Cancel editing': 'إلغاء التعديل',
+  'Record contact with patient': 'تسجيل التواصل مع المريض',
   'Clinic role': 'الدور في العيادة',
   'Edit access': 'تعديل الصلاحية',
   'Post to team': 'نشر للفريق',

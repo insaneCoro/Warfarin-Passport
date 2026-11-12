@@ -734,6 +734,9 @@ textarea:focus {
 }
 
 /* ---------- Dashboard ---------- */
+.stats.clinic-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 .today-work,
 .today-actions {
   gap: 14px;
