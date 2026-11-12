@@ -12,7 +12,8 @@ function patientInput_(x,existing){
  if(enroll)requireDate_(enroll);
  const enInr=numericOrBlank_(x.enrollmentInr??existing?.enrollmentInr);
  if(enInr!==''&&(enInr<=0||enInr>20))throw Error('Invalid enrollment INR');
- return {mrn,name,dob,diagnosis,phone:clean_(x.phone??existing?.phone,40),caregiver:clean_(x.caregiver??existing?.caregiver,120),caregiverPhone:clean_(x.caregiverPhone??existing?.caregiverPhone,40),targetLow:low,targetHigh:high,enrollmentDate:enroll,enrollmentInr:enInr};
+ const warfarinStartDate=clean_(x.warfarinStartDate??existing?.warfarinStartDate,10);if(warfarinStartDate){requireDate_(warfarinStartDate);if(warfarinStartDate>today_())throw Error('Warfarin start date cannot be in the future');}
+ return {mrn,name,dob,diagnosis,warfarinStartDate,phone:clean_(x.phone??existing?.phone,40),caregiver:clean_(x.caregiver??existing?.caregiver,120),caregiverPhone:clean_(x.caregiverPhone??existing?.caregiverPhone,40),targetLow:low,targetHigh:high,enrollmentDate:enroll,enrollmentInr:enInr};
 }
 function patientsList_(p,user){const q=clean_(p.query,150).toLowerCase();return allRows_('Patients').filter(v=>!['Archived','Importing'].includes(v.status)&&(!q||[v.mrn,v.name,v.phone].some(s=>String(s).toLowerCase().includes(q)))).slice(0,200).map(v=>({id:v.id,mrn:v.mrn,name:v.name,dob:v.dob,diagnosis:v.diagnosis,targetLow:v.targetLow,targetHigh:v.targetHigh,status:v.status}));}
 function patientGet_(p,user){const record=requirePatient_(clean_(p.patientId,80)),id=record.id;return {approvals:allRows_('Audit_Log').filter(v=>v.action==='decision.approve'&&allRows_('Encounters').some(e=>e.id===v.recordId&&e.patientId===id)).map(patientView_),patient:patientView_(record),results:allRows_('INR_Results').filter(v=>v.patientId===id&&allRows_('Encounters').some(e=>e.id===v.encounterId&&e.status==='Complete')).map(patientView_),encounters:allRows_('Encounters').filter(v=>v.patientId===id&&v.status==='Complete').map(patientView_),dosePlans:allRows_('Dose_Plans').filter(v=>v.patientId===id&&allRows_('Encounters').some(e=>e.id===v.encounterId&&e.status==='Complete')).map(patientView_),followups:allRows_('Follow_Ups').filter(v=>v.patientId===id).map(patientView_),attempts:allRows_('Followup_Attempts').filter(v=>v.patientId===id).map(patientView_),inventory:allRows_('Inventory').filter(v=>v.patientId===id).map(patientView_),notes:allRows_('Clinical_Notes').filter(v=>v.patientId===id).map(patientView_)};}
@@ -24,20 +25,22 @@ function encounterCreate_(p,user){return withLock_(()=>{
  if(Number(p.expectedVersion)!==Number(patient.rowVersion))throw Error('Record changed; reload before saving');
  const date=requireDate_(clean_(p.testDate,10)),inr=Number(p.inr),next=requireDate_(clean_(p.nextInrDate,10));
  if(!Number.isFinite(inr)||inr<=0||inr>20)throw Error('Invalid INR value');if(next<date)throw Error('Next INR date cannot precede test date');
+ const weeklyInput=numericOrBlank_(p.weeklyMg);
  const daily=p.daily;if(!Array.isArray(daily)||daily.length!==7||daily.some(v=>!Number.isFinite(Number(v))||Number(v)<0||Number(v)>100))throw Error('Seven validated daily doses are required');
  const reason=clean_(p.reason,2000);if(!reason)throw Error('Reason for dose decision required');
  const previous=allRows_('Dose_Plans').filter(x=>x.patientId===patient.id&&allRows_('Encounters').some(e=>e.id===x.encounterId&&e.status==='Complete')).at(-1);
  const previousDaily=previous?['sun','mon','tue','wed','thu','fri','sat'].map(k=>Number(previous[k])):null,previousWeekly=previousDaily?previousDaily.reduce((a,b)=>a+b,0):null;
+ if(weeklyInput!==''&&Math.abs(daily.reduce((s,v)=>s+Number(v),0)-weeklyInput)>0.01)throw Error('Daily doses must match the entered weekly dose');
  const id=Utilities.getUuid(),stamp=now_(),callDate=plusCalendarDays_(next,2),doseDaily=daily.map(Number);
  // Sheets do not provide multi-sheet ACID transactions: keep a Pending encounter
  // until all linked records have been written; failed partial saves need reconciliation.
- append_('Encounters',{id,requestId:key,patientId:patient.id,testDate:date,inr,note:clean_(p.note,4000),nextInrDate:next,status:'Pending',createdAt:stamp,createdBy:user.uid});
- append_('INR_Results',{id:Utilities.getUuid(),patientId:patient.id,testDate:date,inr,enteredAt:stamp,enteredBy:user.uid,encounterId:id});
+ append_('Encounters',{id,requestId:key,patientId:patient.id,testDate:date,inr,note:clean_(p.note,4000),nextInrDate:next,status:'Pending',createdAt:stamp,createdBy:user.uid,holdInstruction:clean_(p.holdInstruction,1000),patientInstructions:clean_(p.patientInstructions,2000),reviewFactors:clean_(p.reviewFactors,2000)});
+ append_('INR_Results',{id:Utilities.getUuid(),patientId:patient.id,testDate:date,inr,enteredAt:stamp,enteredBy:user.uid,encounterId:id,targetLow:patient.targetLow,targetHigh:patient.targetHigh});
  append_('Dose_Plans',{id:Utilities.getUuid(),patientId:patient.id,encounterId:id,effectiveDate:date,sun:doseDaily[0],mon:doseDaily[1],tue:doseDaily[2],wed:doseDaily[3],thu:doseDaily[4],fri:doseDaily[5],sat:doseDaily[6],weeklyMg:doseDaily.reduce((a,b)=>a+b,0),previousDaily:previousDaily?JSON.stringify(previousDaily):'',previousWeeklyMg:previousWeekly??'',percentChange:previousWeekly>0?(doseDaily.reduce((a,b)=>a+b,0)-previousWeekly)/previousWeekly*100:'',inr,reason,nextInrDate:next,approvedBy:'',approvedAt:'',createdAt:stamp,createdBy:user.uid});
  append_('Follow_Ups',{id:Utilities.getUuid(),patientId:patient.id,encounterId:id,inrCheckDate:next,callDueDate:callDate,status:'Pending',createdAt:stamp});
  if(clean_(p.note))append_('Clinical_Notes',{id:Utilities.getUuid(),patientId:patient.id,encounterId:id,noteDate:date,text:clean_(p.note,4000),createdAt:stamp,createdBy:user.uid});
  audit_(user,'inr.enter','Encounters',id,{before:null,after:{inr,testDate:date}});
- audit_(user,'dose.change','Encounters',id,{before:previousDaily,after:doseDaily,reason});
+ audit_(user,'dose.change','Encounters',id,{before:previousDaily,after:doseDaily,reason,holdInstruction:clean_(p.holdInstruction,1000),patientInstructions:clean_(p.patientInstructions,2000),reviewFactors:clean_(p.reviewFactors,2000)});
  if(clean_(p.note))audit_(user,'note.create','Encounters',id,{before:null,after:clean_(p.note,4000)});
  const rec=findRow_('Encounters','id',id);rec.status='Complete';replace_('Encounters',rec);
  replace_('Patients',{...patient,rowVersion:Number(patient.rowVersion)+1,updatedAt:stamp});
@@ -105,7 +108,7 @@ function demoSeed_(p,user){
    }
    insert('Encounters',{id:encounterId,requestId:encounterId,patientId:id,testDate:baseline,inr:inrs.at(-1),note:label,nextInrDate:next,status:'Pending',createdAt:stamp,createdBy:user.uid},'demo.encounter.import');
    // Historical tests belong to this explicitly labelled fixture-import encounter.
-   inrs.forEach((inr,i)=>insert('INR_Results',{id:id+'-inr-'+i,patientId:id,testDate:plusCalendarDays_(anchor,-42+i*7),inr,enteredAt:stamp,enteredBy:user.uid,encounterId},'inr.enter'));
+   inrs.forEach((inr,i)=>insert('INR_Results',{id:id+'-inr-'+i,patientId:id,testDate:plusCalendarDays_(anchor,-42+i*7),inr,enteredAt:stamp,enteredBy:user.uid,encounterId,targetLow:target[0],targetHigh:target[1]},'inr.enter'));
    insert('Dose_Plans',{id:id+'-dose',patientId:id,encounterId,effectiveDate:baseline,...Object.fromEntries(['sun','mon','tue','wed','thu','fri','sat'].map((day,i)=>[day,daily[i]])),weeklyMg:daily.reduce((a,b)=>a+b,0),previousDaily:'',previousWeeklyMg:'',percentChange:'',inr:inrs.at(-1),reason:label,nextInrDate:next,approvedBy:'',approvedAt:'',createdAt:stamp,createdBy:user.uid},'dose.change');
    insert('Follow_Ups',{id:id+'-followup',patientId:id,encounterId,inrCheckDate:next,callDueDate:plusCalendarDays_(next,2),status:'Pending',createdAt:stamp},'followup.schedule');
    insert('Inventory',{id:id+'-stock',patientId:id,strengthMg:5,quantity:stock,confirmedDate:plusCalendarDays_(anchor,-10),updatedAt:stamp,updatedBy:user.uid},'demo.inventory.import');
@@ -126,3 +129,31 @@ function fixtureInsert_(name,record,action,user,snapshot){
  const audited=snapshot.Audit_Log.some(a=>a.recordType===name&&a.recordId===record.id&&(a.action===action||a.action==='demo.import.reconcile'));
  if(!audited){audit_(user,prior?'demo.import.reconcile':action,name,record.id,{synthetic:true,source:'fixture-v1',before:null,after:patientView_(prior||record),entryActor:(prior||record).enteredBy||(prior||record).createdBy||(prior||record).updatedBy||null});snapshot.Audit_Log.push({recordType:name,recordId:record.id,action:prior?'demo.import.reconcile':action});}
 }
+
+/** Shared clinic messages: approved staff only (dispatch authorizes every call). */
+function messagesList_(p,user){
+ let rows=[...allRows_('Team_Messages')].reverse();
+ if(p.patientId){requirePatient_(clean_(p.patientId,80));rows=rows.filter(m=>m.patientId===p.patientId);}
+ if(p.beforeId){const index=rows.findIndex(m=>m.id===p.beforeId);if(index<0)throw Error('Message cursor not found');rows=rows.slice(index+1);}
+ const limit=50,selected=rows.slice(0,limit);
+ return {messages:selected.map(patientView_),hasMore:rows.length>limit,nextBeforeId:selected.at(-1)?.id||null};
+}
+function messageCreate_(p,user){return withLock_(()=>{
+ const requestId=clean_(p.requestId,100),body=String(p.body||'').trim(),replyTo=clean_(p.replyTo,80),patientId=clean_(p.patientId,80);
+ if(!/^[a-z0-9-]{16,100}$/i.test(requestId))throw Error('Message request ID required');
+ if(!body||body.length>3000)throw Error('Enter a message of 1–3000 characters');
+ const existing=findRow_('Team_Messages','requestId',requestId);
+ if(existing){
+  if(existing.createdBy!==user.uid||existing.body!==body||String(existing.replyTo||'')!==replyTo||String(existing.patientId||'')!==patientId)throw Error('Message request ID collision');
+  if(!allRows_('Audit_Log').some(a=>a.recordType==='Team_Messages'&&a.recordId===existing.id))audit_(user,'message.audit.reconcile','Team_Messages',existing.id,{after:patientView_(existing)});
+  return patientView_(existing);
+ }
+ if(patientId)requirePatient_(patientId);
+ const parent=replyTo?findRow_('Team_Messages','id',replyTo):null;
+ if(replyTo&&!parent)throw Error('Reply message not found');
+ if(parent&&String(parent.patientId||'')!==patientId)throw Error('Reply must stay in the same patient conversation');
+ const id=Utilities.getUuid(),message={id,requestId,threadId:parent?(parent.threadId||parent.id):id,replyTo,patientId,body,createdAt:now_(),createdBy:user.uid,authorName:user.displayName||user.email||user.uid,authorRole:user.role};
+ append_('Team_Messages',message);
+ audit_(user,'message.create','Team_Messages',id,{before:null,after:message});
+ return message;
+})}
