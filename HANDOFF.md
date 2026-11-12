@@ -1,14 +1,14 @@
 # Handoff
-**Status:** IN PROGRESS – Codex
+**Status:** READY
 **Last agent:** Codex
 **Date:** 2026-11-12
-**Last PR:** #28 (merged: yes)
+**Last PR:** #29 (merged: yes)
 **Backend (.gs) changed:** no — live deployment version: 14 (previous: 13, for rollback)
 **Live backend matches main:** yes
 
 ## What was done this turn
 - Owner asked Codex to review everything and propose improvements. Reviewed latest main `9bd582be` and Claude's last merged PR #28, plus the preceding staff-only, repository, session, design and test changes. This turn is review/documentation only; no application behavior, schema, sign-in, Worker or records were changed. Patient access remains removed and fictional records/demo mode remain available.
-- Created `docs/REVIEW_2026-11-12.md` with reproduced findings, exact code locations, prioritized product improvements and a suggested sequence of focused implementation turns.
+- [PR #29](https://github.com/insaneCoro/Warfarin-Passport/pull/29) adds `docs/REVIEW_2026-11-12.md` with reproduced findings, exact code locations, prioritized product improvements and a suggested sequence of focused implementation turns, plus this handoff. Documentation only; implementation findings remain open. READY means the requested review is complete; Claude must wait for the owner to announce its turn.
 - Re-ran `npm test`: **75/75 passed, zero skipped**; `npm run test:browser`: **14/14 passed**; `npm run format:check`: passed. Reviewed English iPad/Arabic phone screenshots. Additional synthetic reproductions found gaps in current regression coverage; they are documented honestly, not presented as already fixed.
 - Confirmed public staff login renders without JavaScript errors or clinic navigation before authentication. Checked the current module has main's stamped asset version. Reviewed API authorization/signing/replay/history/cache logic and deployment workflows without accessing real patient data or owner credentials.
 - [Read-only deployment check](https://github.com/insaneCoro/Warfarin-Passport/actions/runs/43250402582) confirmed active backend **14** and `Deployed source matches this release: yes`. No backend publication was needed. Prior rollback version **13** is preserved.
@@ -48,3 +48,4 @@
 | 2026-11-12 | Claude | #17–#23 (merged) | Date-cell fix; repo reorganized + Prettier + browser tests in CI; patient login removed; per-request backend cache, single-patient refresh, asset versioning, redundancy cleanup; sign-in persistence + one-call login; full Arabic interface; handoff + conventions | 14 (previous 13) |
 | 2026-11-12 | Claude | #25–#27 (merged) | Design overhaul: design system, readable type, compact urgent alerts, phone bottom tab bar, bottom-sheet dialogs | 14 (unchanged; previous 13) |
 | 2026-11-12 | Claude | #28 (merged) | Button audit: removed duplicate/unneeded buttons, simpler dashboard | 14 (unchanged) |
+| 2026-11-12 | Codex | #29 (merged) | Review only: 75 unit/14 browser tests pass; four reproduced workflow/usability findings, prioritized staff/iPad roadmap and READY handoff; no app/data/config changes | 14 (unchanged; previous 13) |
