@@ -1,0 +1,46 @@
+name: Deploy existing Apps Script
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to the existing Web App (otherwise read-only preflight)
+        type: boolean
+        default: false
+      rollback_version:
+        description: Optional existing version number to restore (requires publish)
+        type: string
+        default: ''
+  push:
+    branches: [main]
+    paths:
+      - '*.gs'
+      - 'scripts/deploy-apps-script.mjs'
+      - '.github/workflows/apps-script.yml'
+permissions:
+  contents: read
+concurrency:
+  group: existing-apps-script-deployment
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || vars.APPS_SCRIPT_AUTO_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment: apps-script
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/*.test.mjs
+      - name: Check or update existing deployment
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          APPS_SCRIPT_ID: ${{ vars.APPS_SCRIPT_ID }}
+          APPS_SCRIPT_DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
+          PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
+          ROLLBACK_VERSION: ${{ inputs.rollback_version }}
+        run: |
+          args=()
+          if [ "$PUBLISH" = "true" ]; then args+=(--deploy); fi
+          if [ -n "$ROLLBACK_VERSION" ]; then args+=("--rollback-version=$ROLLBACK_VERSION"); fi
+          node scripts/deploy-apps-script.mjs "${args[@]}"
