@@ -123,8 +123,6 @@ function requireAdmin_(user) {
   if (user.role !== 'admin') throw Error('Admin permission required');
 }
 function dispatch_(payload) {
-  if (String(payload.action).startsWith('portal.'))
-    return portalDispatch_(payload.action, payload.params || {}, payload.user);
   const a = payload.action,
     p = payload.params || {},
     user = a === 'auth.me' ? staffAdmission_(payload.user) : authorized_(payload.user);
@@ -136,12 +134,6 @@ function dispatch_(payload) {
     'patients.workspace': patientsWorkspace_,
     'clinic.read': () => clinicSettingsRead_(),
     'clinic.save': clinicSettingsSave_,
-    'access.list': patientAccessList_,
-    'access.save': patientAccessSave_,
-    'requests.list': patientRequestsList_,
-    'requests.reply': patientRequestReply_,
-    'requests.correct': patientRequestCorrect_,
-    'requests.verify': patientRequestVerify_,
     'communications.preferences': communicationPreferences_,
     'communications.validate': communicationValidate_,
     'communications.prepare': communicationPrepare_,

@@ -11,10 +11,7 @@ const truth = (v) => v === true || String(v).toLowerCase() === 'true';
 export function careStatus(p) {
   const latest = p.encounters?.at(-1),
     plan = latest && p.dosePlans.find((d) => d.encounterId === latest.id),
-    pendingData = (p.requests || []).some(
-      (r) => r.kind === 'inr' && r.status === 'Awaiting review' && r.testDate >= (latest?.date || ''),
-    ),
-    approved = !!plan?.approvedBy && !pendingData,
+    approved = !!plan?.approvedBy,
     sent =
       approved &&
       (p.communications || []).some(
@@ -58,9 +55,7 @@ export function todayMarkup(patients, today, allowShared = false) {
       ([key, label, count, hint]) =>
         `<button class="today-task" data-care-filter="${key}"><strong>${count}</strong><b>${label}</b><small>${hint}</small></button>`,
     )
-    .join(
-      '',
-    )}<button class="today-task" data-care-inbox ${allowShared ? '' : 'disabled'}><strong>${patients.reduce((n, p) => n + (p.requests || []).filter((r) => r.status === 'Awaiting review').length, 0)}</strong><b>Patient requests</b><small>Results, questions and date requests</small></button></div></section>`;
+    .join('')}</div></section>`;
 }
 function tabletLine(dose, p) {
   const strength = Number(p.confirmedTabletStrength),
@@ -93,15 +88,14 @@ export function workflowMarkup(p, connected, role) {
     )}</ol><div class="mini-actions pad"><button class="btn primary" data-modal="encounter">Enter a new INR</button>${s.latest && !s.approved ? `<button class="btn" data-care-review ${connected ? '' : 'disabled'}>Request clinician review</button>${connected && role === 'clinician' ? `<button class="btn primary" data-care-approve="${esc(s.latest.id)}">Approve saved care plan</button>` : ''}` : ''}<button class="btn" data-care-message="reminder">INR reminder</button><button class="btn" data-care-message="care-plan" ${!s.approved ? 'disabled' : ''}>Prepare care-plan message</button><button class="btn" data-care-informed ${!p.followups?.some((f) => f.status !== 'Completed') ? 'disabled' : ''}>Record patient informed / contact attempt</button></div><p class="card-caption">Opening WhatsApp is not proof of delivery. Failed contact stays pending.</p></section>`;
 }
 export function patientToolsMarkup(p, role) {
-  return `<section class="card pad patient-tools"><h2>Contact and patient access</h2><p>${esc(p.preferredLanguage === 'ar' ? 'Arabic' : 'English')} · ${esc(p.contactMethod || 'Phone')} · ${truth(p.communicationConsent) ? 'Messaging consent recorded' : 'Messaging consent not recorded'}</p><div class="mini-actions"><button class="btn" data-care-preferences>Communication preferences</button>${['admin', 'clinician'].includes(role) ? '<button class="btn" data-care-access>Patient / caregiver access</button>' : ''}<button class="btn" data-care-inbox>Patient requests</button></div><details class="communication-history"><summary>Patient message history (${(p.communications || []).length})</summary>${(p.communications || []).map((c) => `<article class="request-item"><b>${esc(c.kind)} · ${esc(c.outcome)}</b><p>${esc(readableDate(c.createdAt))} · ${esc(c.createdByName || c.createdBy)}${truth(c.staleAtRecording) ? ' · Historical attempt' : ''}</p><p>${esc(c.note)}</p><details><summary>Original message — historical, not the current prescription</summary><pre class="message-preview" dir="${c.language === 'ar' ? 'rtl' : 'ltr'}">${esc(c.body)}</pre></details></article>`).join('') || '<p>No message attempts recorded yet.</p>'}</details></section>`;
+  return `<section class="card pad patient-tools"><h2>Contact preferences</h2><p>${esc(p.preferredLanguage === 'ar' ? 'Arabic' : 'English')} · ${esc(p.contactMethod || 'Phone')} · ${truth(p.communicationConsent) ? 'Messaging consent recorded' : 'Messaging consent not recorded'}</p><div class="mini-actions"><button class="btn" data-care-preferences>Communication preferences</button></div><details class="communication-history"><summary>Patient message history (${(p.communications || []).length})</summary>${(p.communications || []).map((c) => `<article class="request-item"><b>${esc(c.kind)} · ${esc(c.outcome)}</b><p>${esc(readableDate(c.createdAt))} · ${esc(c.createdByName || c.createdBy)}${truth(c.staleAtRecording) ? ' · Historical attempt' : ''}</p><p>${esc(c.note)}</p><details><summary>Original message — historical, not the current prescription</summary><pre class="message-preview" dir="${c.language === 'ar' ? 'rtl' : 'ltr'}">${esc(c.body)}</pre></details></article>`).join('') || '<p>No message attempts recorded yet.</p>'}</details></section>`;
 }
 const input = (name, label, value = '', type = 'text', extra = '') =>
   `<label class="field">${label}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
 function dialog(ctx, title, body, action, button = 'Save') {
   const patient = ctx.scopePatient,
     identity =
-      patient &&
-      ['prepare', 'record', 'preferences', 'access', 'approve', 'verify', 'reply', 'correct'].includes(action)
+      patient && ['prepare', 'record', 'preferences', 'approve'].includes(action)
         ? `<div class="care-patient-identity"><b>${esc(patient.name)}</b><span>${esc(patient.mrn || '')}</span></div>`
         : '';
   ctx.modal(title, identity + body + '<p id="care-status" role="status" aria-live="polite"></p>', button);
@@ -118,7 +112,7 @@ async function remote(ctx, action, p) {
 export function handleCareClick(b, ctx) {
   if (
     !b.matches(
-      '[data-care-filter],[data-care-message],[data-care-preferences],[data-care-access],[data-care-inbox],[data-care-review],[data-care-approve],[data-care-revoke],[data-care-open],[data-care-reply],[data-care-verify],[data-care-whatsapp],[data-care-clinic],[data-care-correct],[data-care-informed]',
+      '[data-care-filter],[data-care-message],[data-care-preferences],[data-care-review],[data-care-approve],[data-care-open],[data-care-whatsapp],[data-care-clinic],[data-care-informed]',
     )
   )
     return false;
@@ -180,82 +174,13 @@ export function handleCareClick(b, ctx) {
       const f = dialog(
         ctx,
         'Patient communication preferences',
-        `<div class="form-grid"><label class="field">Preferred language<select name="language"><option value="en">English</option><option value="ar">العربية</option></select></label><label class="field">Preferred contact method<select name="contactMethod"><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option><option value="portal">Patient portal</option></select></label><label class="field">Country code for a local number<select name="countryCode"><option value="+966">Saudi Arabia +966</option><option value="international">Another country — enter the full + number</option></select></label>${input('phone', 'Telephone (+ number, or Saudi 05…)', p.phone, 'tel', 'placeholder="+9665…"')}${input('confirmedTabletStrength', 'Confirmed tablet strength (mg)', p.confirmedTabletStrength || '', 'number', 'min="0.5" max="20" step="0.5"')}<label class="checkbox-line"><input name="phoneVerified" type="checkbox" ${p.phoneVerifiedAt ? 'checked' : ''}> I confirmed this number with the patient</label><label class="checkbox-line"><input name="consent" type="checkbox" ${truth(p.communicationConsent) ? 'checked' : ''}> Patient consent for clinical messaging confirmed</label><label class="checkbox-line"><input name="tabletStrengthConfirmed" type="checkbox" ${p.tabletStrengthVerifiedAt ? 'checked' : ''}> I checked the actual tablet strength with the patient</label></div><p>Tablet counts appear only for a confirmed strength and whole/half-tablet combinations. Doses remain in mg.</p>`,
+        `<div class="form-grid"><label class="field">Preferred language<select name="language"><option value="en">English</option><option value="ar">العربية</option></select></label><label class="field">Preferred contact method<select name="contactMethod"><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option></select></label><label class="field">Country code for a local number<select name="countryCode"><option value="+966">Saudi Arabia +966</option><option value="international">Another country — enter the full + number</option></select></label>${input('phone', 'Telephone (+ number, or Saudi 05…)', p.phone, 'tel', 'placeholder="+9665…"')}${input('confirmedTabletStrength', 'Confirmed tablet strength (mg)', p.confirmedTabletStrength || '', 'number', 'min="0.5" max="20" step="0.5"')}<label class="checkbox-line"><input name="phoneVerified" type="checkbox" ${p.phoneVerifiedAt ? 'checked' : ''}> I confirmed this number with the patient</label><label class="checkbox-line"><input name="consent" type="checkbox" ${truth(p.communicationConsent) ? 'checked' : ''}> Patient consent for clinical messaging confirmed</label><label class="checkbox-line"><input name="tabletStrengthConfirmed" type="checkbox" ${p.tabletStrengthVerifiedAt ? 'checked' : ''}> I checked the actual tablet strength with the patient</label></div><p>Tablet counts appear only for a confirmed strength and whole/half-tablet combinations. Doses remain in mg.</p>`,
         'preferences',
       );
       f.dataset.patientId = p.id;
       f.dataset.version = p.rowVersion;
       f.elements.language.value = p.preferredLanguage || 'en';
       f.elements.contactMethod.value = p.contactMethod || 'phone';
-      return;
-    }
-    if (b.hasAttribute('data-care-access')) {
-      const rows = await remote(ctx, 'access.list', { patientId: p.id });
-      const f = dialog(
-        ctx,
-        'Patient and caregiver access',
-        `<p>Confirm identity and consent using the clinic process. Then share <a href="./portal.html" target="_blank" rel="noopener">the patient sign-in page</a>. The person creates their own account and verifies their email. No MRN/password sharing.</p>${rows.map((a) => `<div class="access-row"><span>${esc(a.displayName)} · ${esc(a.email)} · ${esc(a.kind)} · ${truth(a.active) ? 'Active' : 'Disabled'}</span>${truth(a.active) ? `<button type="button" class="btn sm" data-care-revoke="${esc(a.email)}" data-kind="${esc(a.kind)}" data-name="${esc(a.displayName)}">Remove access</button>` : ''}</div>`).join('')}<h3>Add or restore access</h3>${input('displayName', 'Person’s name', '', 'text', 'required')}${input('email', 'Their own email', '', 'email', 'required')}<label class="field">Access type<select name="kind"><option value="patient">Patient</option><option value="caregiver">Authorized caregiver</option></select></label><label class="checkbox-line"><input name="confirmConsent" type="checkbox" required> I confirmed identity and the patient’s authorization for this access</label>`,
-        'access',
-      );
-      f.dataset.patientId = p.id;
-      return;
-    }
-    if (b.hasAttribute('data-care-revoke')) {
-      await remote(ctx, 'access.save', {
-        patientId: p.id,
-        email: b.dataset.careRevoke,
-        kind: b.dataset.kind,
-        displayName: b.dataset.name,
-        active: false,
-      });
-      ctx.close();
-      ctx.toast('Access removed. The person can no longer open this passport.');
-      return;
-    }
-    if (b.hasAttribute('data-care-inbox')) {
-      const rows = await remote(ctx, 'requests.list', {});
-      dialog(
-        ctx,
-        'Patient requests',
-        `<p>Patient-submitted results are unverified. Questions are not an emergency service.</p>${rows.length ? rows.map((r) => `<article class="request-item"><h3>${esc(r.patientName)} · ${esc(r.kind)} · ${esc(r.status)} · ${esc(r.createdRole || 'patient')} submitted</h3><p>${r.kind === 'inr' ? `INR ${esc(r.inr)} · ${esc(r.testDate)} · ${esc(r.lab)}` : esc(r.details)}</p>${r.requestedDate ? `<p>Requested date: ${esc(r.requestedDate)} — the appointment has not changed automatically.</p>` : ''}${r.replies.map((x) => `<p>${esc(x.authorName)}: ${esc(x.body)}</p>`).join('')}<div class="mini-actions"><button type="button" class="btn" data-care-open="${esc(r.patientId)}">Open passport</button><button type="button" class="btn" data-care-reply="${esc(r.id)}" data-patient="${esc(r.patientId)}">Reply</button>${r.kind === 'inr' && ctx.staff?.role === 'clinician' && r.status !== 'Verified' ? `<button type="button" class="btn" data-care-verify="${esc(r.id)}" data-patient="${esc(r.patientId)}">Verify against approved encounter</button><button type="button" class="btn" data-care-correct="${esc(r.id)}" data-patient="${esc(r.patientId)}">Request correction of inaccurate result</button>` : ''}</div></article>`).join('') : '<p>No patient requests yet.</p>'}`,
-        'close',
-        'Close',
-      );
-      return;
-    }
-    if (b.hasAttribute('data-care-correct')) {
-      const f = dialog(
-        { ...ctx, scopePatient: ctx.patients.find((p) => p.id === b.dataset.patient) },
-        'Request a corrected result',
-        '<label class="field">Explain the inaccurate submission and what the patient should send instead<textarea name="reason" rows="5" minlength="10" maxlength="1500" required></textarea></label><label class="checkbox-line"><input name="confirmInaccurate" type="checkbox" required> I reviewed the source and found this submission inaccurate; it must not be counted as a verified result</label>',
-        'correct',
-        'Request correction',
-      );
-      f.dataset.id = b.dataset.careCorrect;
-      return;
-    }
-    if (b.hasAttribute('data-care-reply')) {
-      const f = dialog(
-        { ...ctx, scopePatient: ctx.patients.find((p) => p.id === b.dataset.patient) },
-        'Reply to patient request',
-        '<label class="field">Reply shown to the patient<textarea name="body" rows="5" maxlength="2000" required></textarea></label><p>Do not prescribe a different schedule here. Approve a care plan in the passport first.</p>',
-        'reply',
-        'Post reply',
-      );
-      f.dataset.id = b.dataset.careReply;
-      return;
-    }
-    if (b.hasAttribute('data-care-verify')) {
-      const patient = ctx.patients.find((x) => x.id === b.dataset.patient),
-        plans = patient?.dosePlans.filter((d) => d.approvedBy) || [];
-      const f = dialog(
-        { ...ctx, scopePatient: patient },
-        'Verify patient-submitted INR',
-        `<p>Check the PHC result against the source, enter the measured result and approve the care plan in the passport first. Only an encounter with matching patient, test date and INR can be linked.</p><label class="field">Approved encounter<select name="encounterId" required><option value="">Choose encounter</option>${plans.map((d) => `<option value="${esc(d.encounterId)}">${esc(d.date)} · INR ${esc(d.inr)}</option>`).join('')}</select></label>`,
-        'verify',
-        'Confirm clinical verification',
-      );
-      f.dataset.id = b.dataset.careVerify;
       return;
     }
     if (b.hasAttribute('data-care-review')) {
@@ -342,26 +267,6 @@ export async function submitCare(form, ctx) {
         consent: fd.has('consent'),
         tabletStrengthConfirmed: fd.has('tabletStrengthConfirmed'),
       });
-    if (action === 'access')
-      await remote(ctx, 'access.save', {
-        patientId: form.dataset.patientId,
-        ...Object.fromEntries(fd),
-        confirmConsent: fd.has('confirmConsent'),
-      });
-    if (action === 'reply')
-      await remote(ctx, 'requests.reply', {
-        id: form.dataset.id,
-        body: fd.get('body'),
-        requestId: form.dataset.requestId,
-      });
-    if (action === 'correct')
-      await remote(ctx, 'requests.correct', {
-        id: form.dataset.id,
-        reason: fd.get('reason'),
-        confirmInaccurate: fd.has('confirmInaccurate'),
-      });
-    if (action === 'verify')
-      await remote(ctx, 'requests.verify', { id: form.dataset.id, encounterId: fd.get('encounterId') });
     if (action === 'approve') await remote(ctx, 'decisions.approve', { encounterId: form.dataset.id });
     if (action === 'record')
       await remote(ctx, 'communications.record', {
@@ -383,23 +288,6 @@ export async function submitCare(form, ctx) {
     status.textContent = err.message;
     submit.disabled = false;
   }
-}
-export function reportedUrgentCases(patients) {
-  return patients.flatMap((p) =>
-    (p.requests || [])
-      .filter(
-        (r) =>
-          r.kind === 'inr' &&
-          r.status === 'Awaiting review' &&
-          (Number(r.inr) >= 4.5 ||
-            Number(r.inr) < 1.5 ||
-            (Number(p.targetLow) === 2 && Number(p.targetHigh) === 3 && Number(r.inr) > 4) ||
-            (Number(r.inr) < Number(p.targetLow) &&
-              (/mechanical|prosthetic/i.test(p.diagnosis || '') ||
-                (p.riskLevel === 'high' && ['thrombosis', 'both'].includes(p.riskCategory))))),
-      )
-      .map((r) => ({ patientId: p.id, mrn: p.mrn, name: p.name, inr: Number(r.inr), date: r.testDate })),
-  );
 }
 export function initInrWizard(form) {
   const grid = form.querySelector('.review-form');

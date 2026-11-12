@@ -39,11 +39,11 @@ Existing approval for a specific change in the conversation counts; do not ask f
 
 ## Architecture
 
-The GitHub Pages HTML/CSS/JavaScript frontend obtains a Firebase ID token and sends it to the Cloudflare Worker. The Worker verifies Firebase identity and forwards an HMAC-signed request to Google Apps Script (`API.gs`, `Security.gs`, `Database.gs`). Apps Script validates the signature, checks the approved staff role or patient access link server-side, and reads/writes the existing Google Sheet. Do not trust a frontend role or signature label.
+The GitHub Pages HTML/CSS/JavaScript frontend obtains a Firebase ID token and sends it to the Cloudflare Worker. The Worker verifies Firebase identity and forwards an HMAC-signed request to Google Apps Script (`backend/API.gs`, `backend/Security.gs`, `backend/Database.gs`). Apps Script validates the signature, checks the approved staff role or patient access link server-side, and reads/writes the existing Google Sheet. Do not trust a frontend role or signature label.
 
-Staff use the root site; the separate `portal.html` serves approved patient/caregiver accounts. Email verification alone grants neither staff membership nor patient access. Verified staff can request access and an administrator approves the request in-app. Clinical approval requires an actual authenticated clinician role. Internal notes and team discussions must remain private.
+The app is for clinic staff only; there is no patient login (removed at the owner's request). Email verification alone does not grant staff membership. Verified staff can request access and an administrator approves the request in-app. Clinical approval requires an actual authenticated clinician role. Internal notes and team discussions must remain private.
 
-Database migrations are additive and preserve historical regimens and audit events. Staff-request metadata is stored in private Script Properties; do not print those values. Connected-mode clinical data and authentication tokens must not be persisted in browser local storage. See `docs/PATIENT_ACCESS_SECURITY.md`, `docs/CLINICAL_METHODS.md` and `docs/USER_GUIDE.md`.
+Database migrations are additive and preserve historical regimens and audit events. Staff-request metadata is stored in private Script Properties; do not print those values. Connected-mode clinical data and authentication tokens must not be persisted in browser local storage. See `docs/CLINICAL_METHODS.md` and `docs/USER_GUIDE.md`.
 
 ## Repository layout
 

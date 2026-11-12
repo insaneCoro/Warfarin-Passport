@@ -22,27 +22,17 @@ In the patient passport, open **Communication preferences**. Choose the preferre
 
 Tablet counts appear only if staff explicitly confirm the tablet strength. The display supports exact whole/half-tablet combinations; otherwise it tells staff/patients to confirm the tablet combination. Doses always remain in mg. Reconfirm these preferences when the patient changes telephone number or tablets.
 
-## Patient and caregiver setup
+## Clinic contact details
 
-1. An administrator signs in once after this release to apply the additive database migration. No Google Sheet or tab is deleted.
-2. Administrators can set English/Arabic clinic names and the international contact number in **Admin & staff → Clinic contact details**. Configuration survives a development workspace reset.
-3. An administrator or clinician opens the patient's **Patient / caregiver access**. Confirm identity and consent through the clinic's process, then add the person's own email and access type. Caregivers have their own account and require the patient's explicit authorization; they do not share a patient password.
-4. Share `https://insanecoro.github.io/Warfarin-Passport/portal.html`. The person selects **Create my account**, sets their own password (at least 12 characters), verifies the email, then signs in. Existing accounts can use the same page. No Firebase-console work or User UID copying is required.
-5. Test with fictional patients first. Staff can remove access from the same patient screen; removal blocks future portal API requests, even if an authentication token remains valid.
+Administrators set the English/Arabic clinic names and the international contact number in **Admin & staff → Clinic contact details**. These appear in patient messages and survive a development workspace reset.
 
-Only linked passports are visible. The portal never offers patient dose editing or approval. It shows the last clinician-approved plan, its date/approver, approved instructions, the next PHC test date, and reviewed INR measurements. If a newer result is awaiting review, that is labelled clearly; an unapproved draft is never displayed as a prescription.
-
-Patients/caregivers can submit a measured INR with test date and PHC lab name, ask a question, or request another test date. These are structured submissions, not lab-report file attachments. Submissions do not change clinical INR history or doses by themselves. Staff check the source, enter the actual result and obtain clinical approval before a clinician links the matching encounter as verified. A clinician can request correction of an inaccurate submission with a documented reason, without fabricating a verified result.
-
-Replies appear in the submitting account's own thread. Caregiver access to a care plan does not automatically expose another account's private questions. Questions are not an emergency service. Serious bleeding or head injury requires emergency assessment.
+Patients do not sign in to this app. Staff send reviewed messages (see above) and record results the patient reports by phone or WhatsApp as a normal INR entry.
 
 ## iPad and language
 
-Large touch targets and responsive layouts support iPad, phone and Windows. The staff language switch translates common navigation/actions and enables RTL layout. Source clinical guidance and free-text notes remain in their original language; they are not automatically translated. The patient interface and standard messages support English and Arabic. Unfinished patient requests stay in memory when switching languages or refreshing; no patient health information is stored in local browser storage.
+Large touch targets and responsive layouts support iPad, phone and Windows. The staff language switch translates common navigation/actions and enables RTL layout. Source clinical guidance and free-text notes remain in their original language; they are not automatically translated. Standard patient messages support English and Arabic. No patient health information is stored in local browser storage.
 
 Normal staff login skips completed fictional initialization. Read requests can recover from temporary connection errors and authentication tokens renew in memory. Open forms remain intact on tab return; uncertain writes are not blindly retried. If iPadOS fully discards a page, sign in again. A full page discard can also lose unsaved, in-memory form edits.
-
-New patient-reported INR values must be checked before a routine care-plan draft is sent. Concerning readings appear as unverified triage alerts; contact/verify promptly rather than waiting for a routine reminder. Patient portal submissions contain the measured value, date and PHC laboratory, not uploaded image/PDF attachments.
 
 
 ## New staff who already verified their email
