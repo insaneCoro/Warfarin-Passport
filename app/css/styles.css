@@ -104,7 +104,7 @@ button {
   justify-content: center;
 }
 .brand-mark span {
-  font-size: 12px;
+  font-size: 14.5px;
   align-self: flex-start;
   padding-top: 7px;
 }
@@ -116,12 +116,12 @@ button {
 .brand small {
   display: block;
   color: #9ab3c7;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.1px;
   margin-top: 6px;
 }
 .sidebar-subhead {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 1.5px;
   color: #7190ad;
   padding: 0 13px 14px;
@@ -138,7 +138,7 @@ button {
   border-radius: 6px;
   margin: 2px 0;
   text-align: left;
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 600;
 }
 .nav-item:hover {
@@ -160,14 +160,14 @@ button {
   background: #ffffff25;
   border-radius: 10px;
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .sidebar-foot {
   margin-top: auto;
   border-top: 1px solid #ffffff17;
   padding: 16px 8px 0;
   color: #b5c5d3;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .sidebar-foot small {
@@ -191,30 +191,30 @@ button {
 }
 .breadcrumb {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .top-actions {
   display: flex;
   gap: 24px;
   align-items: center;
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .top-date {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13.5px;
 }
 .user-pill {
   display: flex;
   gap: 10px;
   align-items: center;
-  font-size: 11px;
+  font-size: 13.5px;
 }
 .user-pill b,
 .user-pill small {
   display: block;
 }
 .user-pill small {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 3px;
 }
@@ -236,13 +236,13 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 10px;
+  font-size: 12px;
   background: #fffcf0;
   color: #7e704d;
   border-bottom: 1px solid #f1e9cd;
 }
 .demo-banner b {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.6px;
   white-space: nowrap;
 }
@@ -250,7 +250,7 @@ button {
   flex: 1;
 }
 .demo-banner button {
-  font-size: 10px;
+  font-size: 12px;
   border: 0;
   background: none;
   color: #8d7754;
@@ -258,7 +258,7 @@ button {
 }
 .demo-banner .btn {
   min-height: 26px;
-  font-size: 10px;
+  font-size: 12px;
   padding: 4px 8px;
 }
 .demo-pulse,
@@ -279,7 +279,7 @@ button {
   outline: 0;
 }
 .footnote {
-  font-size: 10px;
+  font-size: 12px;
   color: #8e9cac;
   padding: 0 27px 20px;
 }
@@ -291,7 +291,7 @@ button {
   margin-bottom: 21px;
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--teal);
   font-weight: 750;
   letter-spacing: 1.5px;
@@ -304,7 +304,7 @@ button {
   font-weight: 750;
 }
 .subtext {
-  font-size: 12px;
+  font-size: 14.5px;
   line-height: 1.5;
   color: var(--muted);
   margin: 7px 0 0;
@@ -320,7 +320,7 @@ button {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: 13.5px;
   font-weight: 650;
   text-decoration: none;
   border: 1px solid #dce3eb;
@@ -345,7 +345,7 @@ button {
 .btn.sm {
   padding: 5px 9px;
   min-height: 30px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .btn.dark {
   background: var(--navy);
@@ -361,7 +361,7 @@ button {
   border: 0;
   background: none;
   color: var(--teal);
-  font-size: 11px;
+  font-size: 13.5px;
   font-weight: 650;
   padding: 0;
   text-align: left;
@@ -369,7 +369,7 @@ button {
   text-decoration: none;
 }
 .patient-link {
-  font-size: 12px;
+  font-size: 14.5px;
   color: #1f485b;
 }
 .patient-link:hover {
@@ -403,13 +403,13 @@ button {
 }
 .stat-name {
   text-transform: uppercase;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.65px;
   font-weight: 650;
   color: var(--muted);
 }
 .stat-icon {
-  font-size: 13px;
+  font-size: 15px;
   color: #83a69f;
 }
 .stat-number {
@@ -421,7 +421,7 @@ button {
   color: #233248;
 }
 .stat-hint {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 5px;
   line-height: 1.35;
@@ -456,14 +456,14 @@ button {
 }
 .card-header h2,
 .card-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.1px;
 }
 .card-header small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.4;
   color: var(--muted);
   margin-top: 4px;
@@ -475,7 +475,7 @@ button {
   border-radius: 10px;
   background: #f0f3f7;
   color: #5d7289;
-  font-size: 10px;
+  font-size: 12px;
   margin-left: 5px;
   justify-content: center;
 }
@@ -496,7 +496,7 @@ button {
   grid-column: 1/-1;
 }
 .card-caption {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.6;
   margin: 13px 18px 17px;
@@ -510,7 +510,7 @@ button {
 }
 .attention-item small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   color: #8b7180;
 }
 .attention-dot {
@@ -521,7 +521,7 @@ button {
   height: 22px;
   background: #fff0f1;
   color: var(--red);
-  font-size: 12px;
+  font-size: 14.5px;
   margin-top: 4px;
 }
 .distribution-bar {
@@ -536,7 +536,7 @@ button {
   display: flex;
   gap: 9px;
   flex-wrap: wrap;
-  font-size: 9px;
+  font-size: 12px;
   color: #7b8999;
   padding: 0 18px;
 }
@@ -567,7 +567,7 @@ button {
   border-bottom: 1px solid var(--line);
 }
 .filter-chip {
-  font-size: 10px;
+  font-size: 12px;
   padding: 5px 9px;
   min-height: 27px;
   border: 1px solid #e2e6ed;
@@ -577,7 +577,7 @@ button {
 }
 .filter-chip span {
   margin-left: 5px;
-  font-size: 9px;
+  font-size: 12px;
 }
 .filter-chip.active {
   background: var(--navy);
@@ -591,13 +591,13 @@ button {
 table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 11px;
+  font-size: 13.5px;
 }
 th {
   text-align: left;
   background: #f8fafc;
   color: #8694a5;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.7px;
   text-transform: uppercase;
@@ -617,7 +617,7 @@ tr:last-child td {
 td small,
 .registry-table td small {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: #8e9aaa;
   margin-top: 5px;
   line-height: 1.4;
@@ -641,7 +641,7 @@ td small,
   display: inline-flex;
   align-items: center;
   padding: 4px 7px;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 1.2;
   border-radius: 5px;
@@ -673,7 +673,7 @@ td small,
   padding: 30px 22px;
   text-align: center;
   color: #8a98a7;
-  font-size: 12px;
+  font-size: 14.5px;
   line-height: 1.65;
 }
 .empty h3 {
@@ -692,13 +692,13 @@ td small,
 }
 .search-input {
   width: 100%;
-  font-size: 11px;
+  font-size: 13.5px;
   padding: 9px 11px;
 }
 .toolbar-pill {
   display: inline-flex;
   padding: 7px 10px;
-  font-size: 10px;
+  font-size: 12px;
   background: #eef6f5;
   border-radius: 6px;
   color: var(--teal);
@@ -710,7 +710,7 @@ td small,
 }
 .light {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 4px;
 }
@@ -724,14 +724,14 @@ td small,
   gap: 12px;
   padding: 14px 18px;
   border-bottom: 1px solid #edf0f4;
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .queue-item:last-child {
   border: 0;
 }
 .queue-item small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 5px;
 }
@@ -739,23 +739,23 @@ td small,
   text-align: right;
 }
 .queue-side small {
-  font-size: 10px;
+  font-size: 12px;
 }
 .handover-item {
   padding: 15px 18px;
   border-bottom: 1px solid #edf0f4;
 }
 .handover-item b {
-  font-size: 11px;
+  font-size: 13.5px;
 }
 .handover-item p {
-  font-size: 12px;
+  font-size: 14.5px;
   color: #617489;
   margin: 7px 0;
   line-height: 1.6;
 }
 .handover-item small {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
 }
 .passport-header {
@@ -771,7 +771,7 @@ td small,
   margin: 0;
 }
 .passport-header p:last-child {
-  font-size: 12px;
+  font-size: 14.5px;
   color: var(--muted);
   margin: 8px 0 0;
 }
@@ -793,7 +793,7 @@ td small,
   border-right: 0;
 }
 .passport-metrics small {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.6px;
   color: #8b98a9;
   text-transform: uppercase;
@@ -809,7 +809,7 @@ td small,
   flex-wrap: wrap;
 }
 .passport-metrics span:not(.tag) {
-  font-size: 10px;
+  font-size: 12px;
   color: #8291a3;
   display: block;
   line-height: 1.5;
@@ -822,7 +822,7 @@ td small,
   overflow-x: auto;
 }
 .passport-tabs a {
-  font-size: 11px;
+  font-size: 13.5px;
   padding: 11px 0 13px;
   white-space: nowrap;
   text-decoration: none;
@@ -847,7 +847,7 @@ td small,
   padding: 22px 20px 7px;
 }
 .label {
-  font-size: 10px;
+  font-size: 12px;
   color: #718398;
 }
 .grid-days {
@@ -865,7 +865,7 @@ td small,
   background: #f5faf8;
 }
 .dose-day small {
-  font-size: 9px;
+  font-size: 12px;
   color: #8c9b9a;
   display: block;
 }
@@ -876,29 +876,29 @@ td small,
   color: #2a5555;
 }
 .dose-day strong span {
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 400;
 }
 .review-next h3 {
-  font-size: 12px;
+  font-size: 14.5px;
   margin: 0 0 7px;
 }
 .review-next p {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #7e8f9f;
   line-height: 1.7;
   margin: 0 0 9px;
 }
 .reference-chip {
   display: inline-flex;
-  font-size: 9px;
+  font-size: 12px;
   color: var(--teal);
   padding: 5px 8px;
   background: #eef8f3;
   border-radius: 5px;
 }
 .source-line {
-  font-size: 9px;
+  font-size: 12px;
   color: #91a1aa;
   line-height: 1.7;
   margin: 10px 20px 18px;
@@ -915,7 +915,7 @@ td small,
   color: #ad3b4e;
   background: #fff1f3;
   margin: 13px 19px;
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .section-grid {
   display: grid;
@@ -940,7 +940,7 @@ td small,
 }
 .chart-key {
   padding: 0 18px 18px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .ttr-value {
@@ -951,7 +951,7 @@ td small,
 }
 .ttr-value span {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   font-weight: 400;
   letter-spacing: 0;
@@ -970,7 +970,7 @@ td small,
   background: #6cae9c;
 }
 .method-details {
-  font-size: 10px;
+  font-size: 12px;
   color: #7c8e9f;
   line-height: 1.7;
   margin: 14px 20px 21px;
@@ -995,7 +995,7 @@ td small,
   border-left: 3px solid #90bdb3;
   background: #f8fbfa;
   padding: 12px 14px;
-  font-size: 11px;
+  font-size: 13.5px;
   color: #526e7d;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -1004,7 +1004,7 @@ td small,
 .note-block small {
   display: block;
   color: #8b9eaa;
-  font-size: 9px;
+  font-size: 12px;
   margin-bottom: 5px;
 }
 .info-list {
@@ -1015,12 +1015,12 @@ td small,
 }
 .info-list small {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: #8d9cab;
   margin-bottom: 5px;
 }
 .info-list b {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #3a576b;
   overflow-wrap: anywhere;
 }
@@ -1029,7 +1029,7 @@ td small,
   border-color: #bdd9c8;
 }
 .setup-dot {
-  font-size: 8px;
+  font-size: 12px;
   color: #899b91;
   font-weight: 400;
 }
@@ -1042,13 +1042,13 @@ td small,
   font-size: 17px;
 }
 .stock-info small {
-  font-size: 9px;
+  font-size: 12px;
 }
 .dose-footer {
   display: flex;
   justify-content: space-between;
   padding: 13px 18px;
-  font-size: 11px;
+  font-size: 13.5px;
 }
 .details-grid {
   display: grid;
@@ -1066,7 +1066,7 @@ td small,
   margin-top: 9px;
 }
 .small-note {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -1081,7 +1081,7 @@ td small,
   background: #f8fafb;
   border-radius: 7px;
   padding: 14px;
-  font-size: 11px;
+  font-size: 13.5px;
   color: #4c687e;
 }
 .quick-tile span {
@@ -1105,14 +1105,14 @@ td small,
   min-width: 0;
 }
 .field label {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #667a8b;
   font-weight: 600;
 }
 .field input,
 .field textarea,
 .field select {
-  font-size: 12px;
+  font-size: 14.5px;
   width: 100%;
 }
 .field input[type='checkbox'] {
@@ -1123,7 +1123,7 @@ input[type='checkbox'] {
   flex-shrink: 0;
 }
 .form-help {
-  font-size: 10px;
+  font-size: 12px;
   color: #8a99a7;
   line-height: 1.65;
   margin: 0;
@@ -1131,7 +1131,7 @@ input[type='checkbox'] {
 .checkbox-line {
   display: flex;
   gap: 9px;
-  font-size: 11px;
+  font-size: 13.5px;
   line-height: 1.7;
   color: #5c7584;
 }
@@ -1139,7 +1139,7 @@ input[type='checkbox'] {
   margin-top: 3px;
 }
 .warning-box {
-  font-size: 11px;
+  font-size: 13.5px;
   line-height: 1.65;
   background: #fff8e8;
   border: 1px solid #efdfb5;
@@ -1156,13 +1156,13 @@ input[type='checkbox'] {
   border: 1px solid #dce9e4;
   border-radius: 7px;
   padding: 17px;
-  font-size: 12px;
+  font-size: 14.5px;
   line-height: 1.7;
   color: #5c7886;
   margin: 16px 0;
 }
 .helper-panel h3 {
-  font-size: 13px;
+  font-size: 15px;
   color: #315b62;
 }
 .modal-overlay {
@@ -1231,7 +1231,7 @@ input[type='checkbox'] {
   gap: 9px;
 }
 .dose-entry label {
-  font-size: 10px;
+  font-size: 12px;
   text-align: center;
   color: #90a0ab;
 }
@@ -1243,7 +1243,7 @@ input[type='checkbox'] {
   padding: 10px 2px;
 }
 .schedule-total {
-  font-size: 11px;
+  font-size: 13.5px;
   color: var(--teal);
   margin: 10px 0 0;
 }
@@ -1253,7 +1253,7 @@ input[type='checkbox'] {
   padding: 14px 16px;
 }
 .review-form legend {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #577c74;
   padding: 0 7px;
 }
@@ -1263,10 +1263,10 @@ input[type='checkbox'] {
   gap: 11px;
 }
 .context-grid label {
-  font-size: 10px;
+  font-size: 12px;
 }
 .context-grid select {
-  font-size: 11px;
+  font-size: 13.5px;
   padding: 8px;
 }
 .nomogram-result {
@@ -1274,7 +1274,7 @@ input[type='checkbox'] {
   background: #f2faf6;
   padding: 16px 18px;
   border-radius: 5px;
-  font-size: 11px;
+  font-size: 13.5px;
   line-height: 1.65;
   color: #497e70;
 }
@@ -1294,7 +1294,7 @@ input[type='checkbox'] {
   gap: 15px;
 }
 .nomogram-title span {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1px;
   color: inherit;
 }
@@ -1302,11 +1302,11 @@ input[type='checkbox'] {
   margin: 6px 0;
 }
 .nomogram-result a {
-  font-size: 9px;
+  font-size: 12px;
   color: inherit;
 }
 .nomogram-result .reference-dose {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 650;
   margin-top: 10px;
 }
@@ -1316,11 +1316,11 @@ input[type='checkbox'] {
   margin-top: 6px;
 }
 .decision-divider h3 {
-  font-size: 13px;
+  font-size: 15px;
   margin: 8px 0;
 }
 .decision-divider p {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   margin: 0;
 }
@@ -1344,7 +1344,7 @@ input[type='checkbox'] {
   border-radius: 50%;
   background: #e8f2ed;
   color: #448476;
-  font-size: 12px;
+  font-size: 14.5px;
   flex-shrink: 0;
 }
 .message-content {
@@ -1359,14 +1359,14 @@ input[type='checkbox'] {
   flex-wrap: wrap;
 }
 .message-content header b {
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .message-content header small {
-  font-size: 9px;
+  font-size: 12px;
   color: #91a0af;
 }
 .message-content p {
-  font-size: 12px;
+  font-size: 14.5px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   line-height: 1.7;
@@ -1377,7 +1377,7 @@ input[type='checkbox'] {
   background: #fcfdfd;
 }
 .patient-context {
-  font-size: 9px;
+  font-size: 12px;
   color: #578d81;
   background: #f2f8f5;
   border: 1px solid #deeee5;
@@ -1387,7 +1387,7 @@ input[type='checkbox'] {
   margin-top: 8px;
 }
 .reply-label {
-  font-size: 9px;
+  font-size: 12px;
   display: block;
   color: #99a4b0;
   margin-top: 6px;
@@ -1398,13 +1398,13 @@ input[type='checkbox'] {
   padding: 20px;
 }
 .reply-preview {
-  font-size: 10px;
+  font-size: 12px;
   color: #8c9ca7;
   border-left: 2px solid #91b6ac;
   padding-left: 10px;
 }
 .message-status {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #ac5766;
   line-height: 1.65;
   margin: 0;
@@ -1420,7 +1420,7 @@ input[type='checkbox'] {
   color: white;
   padding: 13px 17px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 14.5px;
   z-index: 110;
   display: none;
   max-width: min(520px, 90vw);
@@ -1478,14 +1478,14 @@ input[type='checkbox'] {
     gap: 8px;
   }
   .brand strong {
-    font-size: 14px;
+    font-size: 15px;
   }
   .brand small {
-    font-size: 7px;
+    font-size: 12px;
   }
   .nav-item {
     padding: 11px 10px;
-    font-size: 11px;
+    font-size: 13.5px;
   }
   .screen {
     padding: 22px 20px 35px;
@@ -1543,13 +1543,13 @@ input[type='checkbox'] {
     font-size: 18px;
   }
   .brand strong {
-    font-size: 13px;
+    font-size: 15px;
   }
   .brand strong br {
     display: none;
   }
   .brand small {
-    font-size: 7px;
+    font-size: 12px;
   }
   .sidebar-subhead,
   .sidebar-foot {
@@ -1564,29 +1564,29 @@ input[type='checkbox'] {
     width: auto;
     white-space: nowrap;
     padding: 7px 10px;
-    font-size: 10px;
+    font-size: 12px;
     margin: 0;
   }
   .nav-ico {
     display: none;
   }
   .nav-count {
-    font-size: 8px;
+    font-size: 12px;
   }
   .topbar {
     height: 49px;
     padding: 0 16px;
   }
   .user-pill {
-    font-size: 10px;
+    font-size: 12px;
   }
   .breadcrumb {
-    font-size: 10px;
+    font-size: 12px;
   }
   .demo-banner {
     padding: 8px 16px;
     flex-wrap: wrap;
-    font-size: 9px;
+    font-size: 12px;
     gap: 7px;
   }
   .demo-banner > span:nth-of-type(2) {
@@ -1603,7 +1603,7 @@ input[type='checkbox'] {
     font-size: 24px;
   }
   .subtext {
-    font-size: 11px;
+    font-size: 13.5px;
   }
   .stats,
   .clinic-stats {
@@ -1617,10 +1617,10 @@ input[type='checkbox'] {
     font-size: 23px;
   }
   .stat-hint {
-    font-size: 9px;
+    font-size: 12px;
   }
   .stat-name {
-    font-size: 8px;
+    font-size: 12px;
   }
   .dashboard-side {
     grid-template-columns: 1fr;
@@ -1629,7 +1629,7 @@ input[type='checkbox'] {
     padding: 15px;
   }
   .card-header h2 {
-    font-size: 12px;
+    font-size: 14.5px;
   }
   .registry-card .card-header {
     flex-wrap: wrap;
@@ -1642,7 +1642,7 @@ input[type='checkbox'] {
     font-size: 24px;
   }
   .passport-header p:last-child {
-    font-size: 11px;
+    font-size: 13.5px;
   }
   .passport-metrics {
     grid-template-columns: 1fr 1fr;
@@ -1662,13 +1662,13 @@ input[type='checkbox'] {
     font-size: 18px;
   }
   .passport-metrics small {
-    font-size: 8px;
+    font-size: 12px;
   }
   .passport-tabs {
     gap: 22px;
   }
   .passport-tabs a {
-    font-size: 10px;
+    font-size: 12px;
   }
   .review-summary {
     padding: 17px 14px;
@@ -1678,10 +1678,10 @@ input[type='checkbox'] {
     padding: 10px 1px;
   }
   .dose-day strong {
-    font-size: 13px;
+    font-size: 15px;
   }
   .dose-day small {
-    font-size: 8px;
+    font-size: 12px;
   }
   .dose-day strong span {
     display: none;
@@ -1717,7 +1717,7 @@ input[type='checkbox'] {
     gap: 4px;
   }
   .dose-entry input {
-    font-size: 13px;
+    font-size: 15px;
   }
   .context-grid {
     grid-template-columns: 1fr 1fr;
@@ -1727,7 +1727,7 @@ input[type='checkbox'] {
     padding: 11px;
   }
   .review-form .field label {
-    font-size: 10px;
+    font-size: 12px;
   }
   .nomogram-result {
     padding: 13px;
@@ -1737,7 +1737,7 @@ input[type='checkbox'] {
     gap: 4px;
   }
   .history-card td {
-    font-size: 10px;
+    font-size: 12px;
     padding: 12px;
   }
   .messages-layout {
@@ -1765,7 +1765,7 @@ input[type='checkbox'] {
     width: 100%;
   }
   .footnote {
-    font-size: 9px;
+    font-size: 12px;
     padding: 0 16px 18px;
   }
 }
@@ -1780,7 +1780,7 @@ input[type='checkbox'] {
   color: #ad4257;
   background: #fff0f3;
   white-space: normal;
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.4;
 }
 .patient-risk-banner {
@@ -1797,15 +1797,15 @@ input[type='checkbox'] {
   color: #a4475a;
 }
 .patient-risk-banner b {
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .patient-risk-banner p {
-  font-size: 11px;
+  font-size: 13.5px;
   margin: 6px 0;
   line-height: 1.6;
 }
 .patient-risk-banner small {
-  font-size: 9px;
+  font-size: 12px;
   color: #997b86;
 }
 .risk-fields {
@@ -1814,7 +1814,7 @@ input[type='checkbox'] {
   padding: 14px;
 }
 .risk-fields legend {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #98707d;
   padding: 0 6px;
 }
@@ -1833,7 +1833,7 @@ input[type='checkbox'] {
   line-height: 1.7;
 }
 .nomogram-result h4 {
-  font-size: 11px;
+  font-size: 13.5px;
   margin: 11px 0 6px;
 }
 .reference-band {
@@ -1843,11 +1843,11 @@ input[type='checkbox'] {
   margin: 12px 0;
 }
 .reference-condition {
-  font-size: 10px;
+  font-size: 12px;
   font-style: italic;
 }
 .management-sources {
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 12px;
 }
 .attention-item small {
@@ -1870,14 +1870,14 @@ input[type='checkbox'] {
   align-items: start;
 }
 .staff-steps {
-  font-size: 11px;
+  font-size: 13.5px;
   line-height: 1.8;
   color: #718496;
   padding-left: 18px;
   margin: 0 0 5px;
 }
 #staff-result {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #a74656;
   line-height: 1.6;
   margin: 0;
@@ -1918,7 +1918,7 @@ input[type='checkbox'] {
 }
 .urgent-banner > p {
   margin: 0 0 12px;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
 }
 .urgent-row {
@@ -1931,7 +1931,7 @@ input[type='checkbox'] {
 }
 .urgent-row span {
   display: block;
-  font-size: 12px;
+  font-size: 14.5px;
   line-height: 1.6;
 }
 .urgent-row .btn {
@@ -2000,17 +2000,17 @@ input[type='checkbox'] {
   font-size: 17px;
 }
 .nomogram-result .reference-band p {
-  font-size: 13px;
+  font-size: 15px;
 }
 .nomogram-result .reference-condition {
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .clinic-refresh {
   margin-bottom: 12px;
   display: flex;
   gap: 12px;
   align-items: center;
-  font-size: 12px;
+  font-size: 14.5px;
   color: #607481;
 }
 .saved-decision {
@@ -2021,6 +2021,6 @@ input[type='checkbox'] {
   margin: 14px 0;
 }
 .saved-decision p {
-  font-size: 12px;
+  font-size: 14.5px;
   margin: 6px 0;
 }

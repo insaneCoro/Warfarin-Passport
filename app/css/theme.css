@@ -1,0 +1,1235 @@
+/*
+ * Warfarin Passport design system.
+ * Loaded after styles.css and care.css: it sets the colours, type scale, spacing and component styles.
+ * Change the tokens below rather than individual colours. Arabic uses IBM Plex Sans Arabic.
+ */
+:root {
+  --font: 'Plus Jakarta Sans', 'IBM Plex Sans Arabic', ui-sans-serif, -apple-system, 'Segoe UI', sans-serif;
+  --ink: #0b1b2b;
+  --ink-2: #33475b;
+  --ink-3: #64748b;
+  --ink-4: #94a3b8;
+  --bg: #f4f7fa;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --line: #e3e9f0;
+  --line-2: #eef2f6;
+  --primary: #0f766e;
+  --primary-600: #0d6560;
+  --primary-50: #e8f6f3;
+  --primary-100: #cdeee7;
+  --accent: #14b8a6;
+  --navy: #0b1b2b;
+  --navy-2: #12304a;
+  --danger: #c2334d;
+  --danger-ink: #9f1727;
+  --danger-50: #fff1f3;
+  --warning: #b7791f;
+  --warning-50: #fff7e6;
+  --success: #15803d;
+  --success-50: #ecfdf3;
+  --info: #3b5bdb;
+  --info-50: #eef2ff;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 5%);
+  --shadow: 0 1px 3px rgb(16 24 40 / 6%), 0 6px 16px -4px rgb(16 24 40 / 6%);
+  --shadow-lg: 0 24px 60px -12px rgb(11 27 43 / 28%);
+  --teal: var(--primary);
+  --muted: var(--ink-3);
+  --red: var(--danger);
+  font-family: var(--font);
+  color: var(--ink-2);
+  background: var(--bg);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+html[lang='ar'] {
+  --font: 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', sans-serif;
+}
+body {
+  background: var(--bg);
+  font-family: var(--font);
+  line-height: 1.5;
+}
+h1,
+h2,
+h3 {
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+a {
+  color: var(--primary);
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid rgb(20 184 166 / 45%);
+  outline-offset: 2px;
+}
+
+/* ---------- Layout ---------- */
+.app-layout {
+  grid-template-columns: 248px minmax(0, 1fr);
+  /* The sidebar colour runs the full page height, however long the page is. */
+  background: linear-gradient(to right, var(--navy) 248px, transparent 248px);
+}
+html[dir='rtl'] .app-layout {
+  background: linear-gradient(to left, var(--navy) 248px, transparent 248px);
+}
+.sidebar {
+  background: var(--navy);
+  padding: 22px 14px 18px;
+  color: #b4c3d3;
+}
+.brand {
+  margin: 4px 10px 30px;
+  gap: 12px;
+}
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2dd4bf, #0f766e);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgb(45 212 191 / 70%);
+}
+.brand strong {
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+.brand small {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: #7f97ad;
+}
+.sidebar-subhead {
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: #6b849b;
+  padding: 0 12px 10px;
+}
+.nav-item {
+  padding: 11px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #c3d0dc;
+  gap: 12px;
+  margin: 3px 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.nav-item:hover {
+  background: rgb(255 255 255 / 6%);
+  color: #fff;
+}
+.nav-item.active {
+  background: linear-gradient(135deg, rgb(45 212 191 / 22%), rgb(15 118 110 / 35%));
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgb(45 212 191 / 30%);
+}
+.nav-ico {
+  width: 20px;
+  text-align: center;
+  font-size: 16px;
+  opacity: 0.9;
+}
+.nav-count {
+  margin-inline-start: auto;
+  background: #f97066;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+}
+.nav-short {
+  display: none;
+}
+.sidebar-foot {
+  font-size: 11.5px;
+  color: #7f97ad;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  padding: 14px 12px 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 64px;
+  padding: 0 28px;
+  background: rgb(255 255 255 / 85%);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.breadcrumb {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.refresh-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.refresh-status {
+  font-size: 12.5px;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.refresh-status.error {
+  color: var(--danger);
+  font-weight: 600;
+}
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    transform 0.3s;
+}
+.icon-btn:hover {
+  background: var(--surface-2);
+}
+.icon-btn:active span {
+  display: inline-block;
+  transform: rotate(180deg);
+  transition: transform 0.3s;
+}
+.top-date {
+  font-size: 13px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.user-pill b {
+  display: block;
+  color: var(--ink);
+  font-weight: 650;
+  line-height: 1.2;
+}
+.user-pill small {
+  display: block;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #99f6e4, #5eead4);
+  color: #134e4a;
+  font-weight: 750;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.demo-banner {
+  justify-content: center;
+  padding: 7px 24px;
+  font-size: 12px;
+  background: linear-gradient(90deg, #fff8e6, #fffbf0);
+  color: #7a5b12;
+  border-bottom: 1px solid #f6e7bd;
+}
+.demo-banner b {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.screen {
+  max-width: 1400px;
+  padding: 28px 32px 56px;
+}
+.footnote {
+  font-size: 12px;
+  color: var(--ink-4);
+  text-align: center;
+  padding: 18px;
+}
+
+/* ---------- Page headings ---------- */
+.page-heading {
+  margin-bottom: 24px;
+  align-items: flex-end;
+}
+.page-heading h1,
+.passport-header h1 {
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin: 2px 0 4px;
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin: 0;
+}
+.eyebrow.greeting {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.subtext {
+  font-size: 14.5px;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+/* ---------- Cards ---------- */
+.card,
+.dose-review-card,
+.current-plan,
+.workflow-card,
+.patient-tools {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line-2);
+}
+.card-header h2,
+.patient-tools h2,
+.card h2 {
+  font-size: 16.5px;
+  font-weight: 700;
+  margin: 0;
+}
+.card-header small,
+.card-caption {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.pad {
+  padding: 22px;
+}
+.patient-tools {
+  padding: 20px 22px;
+}
+.patient-tools p {
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.section-grid,
+.dashboard-grid {
+  gap: 20px;
+}
+.empty {
+  color: var(--ink-4);
+  font-size: 14px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+}
+.btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: #cfd8e3;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn.primary {
+  background: linear-gradient(180deg, #13877e, var(--primary));
+  border-color: var(--primary-600);
+  color: #fff;
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 10%),
+    inset 0 1px 0 rgb(255 255 255 / 15%);
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+}
+.btn.sm {
+  font-size: 13px;
+  min-height: 36px;
+  padding: 7px 12px;
+}
+.inline-action {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--primary);
+}
+.back-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+/* ---------- Badges ---------- */
+.tag {
+  font-size: 12px;
+  font-weight: 650;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.tag.good,
+.tag.done {
+  background: var(--success-50);
+  color: var(--success);
+  border-color: #c4ecd4;
+}
+.tag.low {
+  background: var(--info-50);
+  color: var(--info);
+  border-color: #d5ddfb;
+}
+.tag.high,
+.tag.due {
+  background: var(--warning-50);
+  color: var(--warning);
+  border-color: #f6e0b0;
+}
+.tag.neutral {
+  background: #f1f5f9;
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+.tag.overdue,
+.tag.out-of-range {
+  background: var(--danger-50);
+  color: var(--danger-ink);
+  border-color: #f7c4cd;
+}
+.count-chip {
+  font-size: 12px;
+  background: var(--primary-50);
+  color: var(--primary);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-weight: 700;
+}
+
+/* ---------- Tables ---------- */
+table {
+  font-size: 14px;
+}
+th {
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  background: var(--surface-2);
+  padding: 12px 18px;
+}
+html[dir='rtl'] th {
+  text-align: right;
+}
+td {
+  padding: 14px 18px;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line-2);
+}
+tbody tr {
+  transition: background 0.12s;
+}
+tbody tr:hover {
+  background: #f7fbfa;
+}
+td small,
+.patient-link + small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+.patient-link {
+  font-size: 14.5px;
+  font-weight: 650;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: start;
+}
+.patient-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* ---------- Forms ---------- */
+input,
+select,
+textarea {
+  font-size: 15px;
+  border: 1px solid #d5dde7;
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  color: var(--ink);
+  background: var(--surface);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: #b9c6d4;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgb(20 184 166 / 15%);
+}
+.field {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  gap: 7px;
+}
+.form-help,
+.small-note {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.search-input,
+.registry-card input[type='search'] {
+  border-radius: 999px;
+  padding-inline-start: 16px;
+}
+.filter-chip {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 13px;
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  background: var(--surface);
+}
+.filter-chip.active,
+.filter-chip[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+#urgent-alerts > .warning-box {
+  margin-bottom: 14px;
+}
+.warning-box {
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--warning-50);
+  border: 1px solid #f6e0b0;
+  color: #7a5212;
+  padding: 12px 16px;
+}
+
+/* ---------- Urgent reviews ---------- */
+.urgent-bar {
+  background: var(--surface);
+  border: 1px solid #f7c4cd;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  margin: 0 0 24px;
+  position: relative;
+  overflow: hidden;
+}
+.urgent-bar::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #f97066, var(--danger));
+}
+.urgent-bar-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.urgent-bar-head h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--danger-ink);
+  margin: 0;
+  flex: 1;
+}
+.urgent-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--danger-50);
+  color: var(--danger);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 5px rgb(194 51 77 / 8%);
+  animation: urgent-pulse 2.4s ease-in-out infinite;
+}
+@keyframes urgent-pulse {
+  50% {
+    box-shadow: 0 0 0 9px rgb(194 51 77 / 0%);
+  }
+}
+.urgent-help summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.urgent-help p {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  max-width: 760px;
+  margin: 8px 0 0;
+}
+.urgent-help[open] {
+  flex-basis: 100%;
+  order: 3;
+}
+.urgent-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.urgent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: start;
+  background: var(--danger-50);
+  border: 1px solid #f9d4da;
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: var(--ink);
+  min-height: 60px;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.urgent-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+.urgent-inr {
+  flex: none;
+  font-weight: 800;
+  font-size: 13px;
+  color: #fff;
+  background: var(--danger);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.urgent-text {
+  flex: 1;
+  min-width: 0;
+}
+.urgent-text b {
+  display: block;
+  font-size: 14.5px;
+}
+.urgent-text small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.urgent-open {
+  flex: none;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--danger-ink);
+}
+
+/* Away from the dashboard the urgent list shrinks to one line of patient chips. */
+.urgent-bar.compact {
+  padding: 10px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.urgent-bar.compact .urgent-bar-head h2 {
+  font-size: 14.5px;
+}
+.urgent-bar.compact .urgent-help,
+.urgent-bar.compact .urgent-text small,
+.urgent-bar.compact .urgent-open {
+  display: none;
+}
+.urgent-bar.compact .urgent-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+.urgent-bar.compact .urgent-item {
+  min-height: 0;
+  padding: 5px 10px 5px 6px;
+  border-radius: 999px;
+  gap: 8px;
+}
+.urgent-bar.compact .urgent-inr {
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.urgent-bar.compact .urgent-text b {
+  font-size: 13.5px;
+}
+
+/* ---------- Dashboard ---------- */
+.today-work,
+.today-actions {
+  gap: 14px;
+}
+.today-actions,
+.today-work > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.dashboard-grid {
+  align-items: start;
+}
+.card td small,
+.card li small,
+.attention-item small,
+.queue-item small,
+.note-block small {
+  font-size: 12.5px;
+}
+.today-task {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius);
+  min-height: 132px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+  color: var(--ink-2);
+  overflow: hidden;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s;
+}
+.today-task::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: -30px;
+  top: -30px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary-100), transparent 70%);
+}
+.today-task:nth-child(2)::after {
+  background: radial-gradient(circle, #fde7c2, transparent 70%);
+}
+.today-task:nth-child(3)::after {
+  background: radial-gradient(circle, #dbe4ff, transparent 70%);
+}
+.today-task:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary-100);
+}
+.today-task strong {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+.today-task b {
+  font-size: 15.5px;
+  color: var(--ink);
+}
+.today-task small {
+  font-size: 13.5px;
+  color: var(--ink-3);
+}
+.stats,
+.clinic-stats {
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.stat {
+  border: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+  background: var(--surface);
+}
+.stat-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stat-name {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.stat-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--primary-50);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+.stat.stat-coral .stat-icon,
+.stat.red .stat-icon {
+  background: var(--danger-50);
+  color: var(--danger);
+}
+.stat.stat-amber .stat-icon,
+.stat.orange .stat-icon {
+  background: var(--warning-50);
+  color: var(--warning);
+}
+.stat.stat-blue .stat-icon {
+  background: var(--info-50);
+  color: var(--info);
+}
+.stat-number {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin-top: 8px;
+}
+.stat-hint {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.attention-item,
+.queue-item,
+.handover-item {
+  padding: 14px 20px;
+  font-size: 14px;
+}
+.distribution-bar {
+  height: 12px;
+  border-radius: 999px;
+}
+
+/* ---------- Patient passport ---------- */
+.passport-header {
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+.passport-header p {
+  font-size: 14.5px;
+  color: var(--ink-3);
+}
+.passport-metrics {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  padding: 20px 8px;
+}
+.passport-metrics small {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.passport-metrics strong {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.passport-metrics span {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.passport-tabs {
+  position: sticky;
+  top: 64px;
+  z-index: 30;
+  background: rgb(244 247 250 / 92%);
+  backdrop-filter: blur(8px);
+  display: flex;
+  gap: 6px;
+  padding: 10px 0;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.passport-tabs a {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.passport-tabs a:hover {
+  background: var(--surface);
+  color: var(--primary);
+}
+.workflow-steps li {
+  font-size: 14.5px;
+}
+.workflow-steps li span {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+.workflow-steps li.done span {
+  background: var(--primary);
+  color: #fff;
+}
+.patient-risk-banner {
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+.dose-day {
+  border-radius: 12px;
+}
+.grid-days .dose-day strong {
+  font-size: 20px;
+}
+.note-block {
+  font-size: 14px;
+  border-radius: 12px;
+}
+.info-list,
+.details-grid {
+  font-size: 14px;
+}
+
+/* ---------- Dialogs ---------- */
+.modal-overlay {
+  background: rgb(11 27 43 / 45%);
+  backdrop-filter: blur(4px);
+}
+.modal {
+  width: min(720px, 100%);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  animation: modal-in 0.18s ease-out;
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.modal-header {
+  padding: 20px 24px;
+}
+.modal-header h2 {
+  font-size: 19px;
+  font-weight: 750;
+}
+.modal-body {
+  padding: 22px 24px;
+}
+.modal-actions {
+  padding: 16px 24px;
+  background: var(--surface-2);
+  gap: 10px;
+}
+.modal-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 22px;
+}
+.toast {
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---------- Sign-in ---------- */
+body.auth-screen {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgb(45 212 191 / 18%), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, rgb(59 91 219 / 10%), transparent 60%), var(--bg);
+}
+body.auth-screen .app-layout,
+body.auth-screen .main-shell {
+  background: none;
+}
+body.auth-screen .topbar {
+  position: static;
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
+}
+body.auth-screen .refresh-slot {
+  display: none;
+}
+.login-card {
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--line);
+}
+.login-logo {
+  background: linear-gradient(135deg, #2dd4bf, #0f766e) !important;
+  box-shadow: 0 10px 24px -10px rgb(15 118 110 / 70%);
+}
+.login-intro h2,
+.login-intro h1 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.restoring {
+  color: var(--ink-3);
+}
+.spinner {
+  border-color: var(--primary-100);
+  border-top-color: var(--primary);
+}
+
+/* ---------- Tablet ---------- */
+@media (max-width: 1020px) {
+  .screen {
+    padding: 24px 22px 48px;
+  }
+  .refresh-status,
+  .top-date {
+    display: none;
+  }
+}
+
+/* ---------- Phone: bottom tab bar, full-screen dialogs ---------- */
+@media (max-width: 760px) {
+  :root {
+    font-size: 15px;
+  }
+  .app-layout,
+  html[dir='rtl'] .app-layout {
+    background: none;
+  }
+  .sidebar {
+    position: fixed;
+    inset: auto 0 0 0;
+    top: auto;
+    z-index: 60;
+    height: auto;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: rgb(11 27 43 / 96%);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 -8px 24px rgb(11 27 43 / 18%);
+  }
+  .sidebar .brand,
+  .sidebar-subhead,
+  .sidebar-foot {
+    display: none;
+  }
+  .sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 2px;
+    overflow: visible;
+  }
+  .nav-item {
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 2px;
+    margin: 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+    min-height: 54px;
+    justify-content: center;
+    position: relative;
+  }
+  .nav-ico {
+    display: block;
+    font-size: 19px;
+    width: auto;
+  }
+  .nav-count {
+    position: absolute;
+    top: 3px;
+    inset-inline-end: calc(50% - 22px);
+    margin: 0;
+    font-size: 10px;
+    min-width: 17px;
+    height: 17px;
+  }
+  .main-shell {
+    padding-bottom: 76px;
+  }
+  .topbar {
+    height: 56px;
+    padding: 0 14px;
+  }
+  .breadcrumb {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .user-pill > div:last-child,
+  .mobile-brand {
+    display: none;
+  }
+  .demo-banner {
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+  .demo-banner > span:nth-of-type(2) {
+    display: none;
+  }
+  .screen {
+    padding: 18px 14px 32px;
+  }
+  .page-heading,
+  .passport-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .passport-header .mini-actions {
+    flex-wrap: wrap;
+  }
+  .nav-item {
+    padding-inline: 0;
+    font-size: 11px;
+  }
+  .nav-label {
+    display: none;
+  }
+  .nav-short {
+    display: block;
+  }
+  .page-heading h1,
+  .passport-header h1 {
+    font-size: 25px;
+  }
+  .page-heading .mini-actions .btn {
+    width: 100%;
+  }
+  .stats,
+  .clinic-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .stat-number {
+    font-size: 25px;
+  }
+  .stat-name {
+    font-size: 11px;
+  }
+  .stat-hint {
+    font-size: 12px;
+  }
+  .card-header h2 {
+    font-size: 16px;
+  }
+  .urgent-items {
+    grid-template-columns: 1fr;
+  }
+  .urgent-open {
+    display: none;
+  }
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .modal {
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 20px 20px 0 0;
+  }
+  .modal-actions {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  .modal-actions .btn {
+    flex: 1;
+  }
+  .passport-tabs {
+    top: 56px;
+  }
+  .passport-metrics strong {
+    font-size: 20px;
+  }
+  table {
+    font-size: 13.5px;
+  }
+  th,
+  td {
+    padding: 12px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .urgent-icon,
+  .modal {
+    animation: none;
+  }
+  .today-task,
+  .urgent-item,
+  .btn {
+    transition: none;
+  }
+}

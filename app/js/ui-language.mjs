@@ -481,6 +481,15 @@ const ar = {
   No: 'لا',
   Language: 'اللغة',
   'Saved successfully.': 'تم الحفظ بنجاح.',
+  'What to do': 'ما الإجراء المطلوب',
+  Home: 'الرئيسية',
+  Calls: 'الاتصالات',
+  Team: 'الفريق',
+  Stock: 'المخزون',
+  Admin: 'الإدارة',
+  Settings: 'الإعدادات',
+  'Refresh failed': 'فشل التحديث',
+  'Refresh clinic (also checks every 60 seconds)': 'تحديث العيادة (يتم التحقق تلقائياً كل 60 ثانية)',
   // Signed-in staff screens
   Access: 'الصلاحية',
   'Not set': 'غير محدد',
@@ -582,8 +591,8 @@ const arDate = (s) => s.replace(DATE, (m, d, mon, y) => `${d} ${months[mon]} ${y
 /** Phrases that contain numbers or dates. Each returns Arabic, or undefined if it does not apply. */
 const patterns = [
   [
-    /^⚠ (\d+) urgent clinical reviews? — action required$/,
-    (m) => `⚠ مراجعات سريرية عاجلة: ${m[1]} — يلزم إجراء`,
+    /^(?:⚠ )?(\d+) urgent clinical reviews? — action required$/,
+    (m) => `مراجعات سريرية عاجلة: ${m[1]} — يلزم إجراء`,
   ],
   [/^(\d+) patient\(s\)$/, (m) => `${m[1]} مريض`],
   [/^(\d+) tablets?$/, (m) => `${m[1]} قرص`],
@@ -625,6 +634,13 @@ const patterns = [
   [/^Patient message history \((\d+)\)$/, (m) => `سجل رسائل المريض (${m[1]})`],
   [/^([<≥]\s?\d+%|\d+–\d+%): (\d+) patient\(s\)$/, (m) => `${m[1]}: ${m[2]} مريض`],
   [/^(\d+)% of the six-month window covered\.$/, (m) => `تغطية ${m[1]}% من فترة الأشهر الستة.`],
+  [
+    /^(Good morning|Good afternoon|Good evening)(?:, (.+))?$/,
+    (m) =>
+      ({ 'Good morning': 'صباح الخير', 'Good afternoon': 'مساء الخير', 'Good evening': 'مساء الخير' })[m[1]] +
+      (m[2] ? `، ${m[2]}` : ''),
+  ],
+  [/^Updated (\d{1,2}:\d{2}|—)$/, (m) => `آخر تحديث ${m[1]}`],
   [/^6-month maintenance$/, () => 'متابعة 6 أشهر'],
   [
     /^Last refreshed (\d{1,2}:\d{2}) · checks every 60 seconds while this page is visible$/,

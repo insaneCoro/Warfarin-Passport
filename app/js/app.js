@@ -294,8 +294,23 @@ function toast(s) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => t.classList.remove('show'), 3200);
 }
+function initials(name) {
+  const words = String(name || '?')
+    .replace(/@.*/, '')
+    .replace(/^(dr|mr|mrs|ms)\.?\s+/i, '')
+    .split(/[\s._-]+/)
+    .filter(Boolean);
+  return ((words[0]?.[0] || '?') + (words[1]?.[0] || '')).toUpperCase();
+}
+function greeting() {
+  const hour = new Date().getHours(),
+    part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening',
+    name = connected && staff ? String(staff.displayName || '').trim() : '';
+  return name ? `${part}, ${name}` : part;
+}
 function heading(title, subtitle, action = '') {
-  return `<div class="page-heading"><div><p class="eyebrow">WARFARIN PASSPORT / ${e(view)}</p><h1>${e(title)}</h1><p class="subtext">${e(subtitle)}</p></div>${action}</div>`;
+  const eyebrow = view === 'dashboard' ? `<p class="eyebrow greeting">${e(greeting())}</p>` : '';
+  return `<div class="page-heading"><div>${eyebrow}<h1>${e(title)}</h1><p class="subtext">${e(subtitle)}</p></div>${action}</div>`;
 }
 function tag(label, type = 'neutral') {
   return `<span class="tag ${e(type)}">${e(label)}</span>`;
@@ -800,12 +815,14 @@ function render() {
     screen.before(urgentRoot);
   }
   urgentRoot.innerHTML = urgentAlertMarkup();
+  const refreshSlot = document.querySelector('#refresh-slot');
+  if (refreshSlot) refreshSlot.innerHTML = refreshMarkup();
   const staffNav = document.querySelector('[data-nav=staff]');
-  staffNav.innerHTML = `<span class="nav-ico">⚙</span>${connected && staff?.role === 'admin' ? 'Admin & staff' : connected && !staff ? 'Staff sign-in' : 'Staff & settings'}`;
+  staffNav.innerHTML = `<span class="nav-ico">⚙</span><span class="nav-label">${connected && staff?.role === 'admin' ? 'Admin & staff' : connected && !staff ? 'Staff sign-in' : 'Staff & settings'}</span><span class="nav-short" aria-hidden="true">${connected && staff?.role === 'admin' ? 'Admin' : 'Settings'}</span>`;
   if (connected)
-    document.querySelector('.user-pill').textContent = staff
-      ? `${staff.displayName || staff.email} · ${uiText(roleLabel(staff.role))}`
-      : 'Staff sign-in required';
+    document.querySelector('.user-pill').innerHTML = staff
+      ? `<div class="avatar">${e(initials(staff.displayName || staff.email))}</div><div><b>${e(staff.displayName || staff.email)}</b><small>${e(uiText(roleLabel(staff.role)))}</small></div>`
+      : '<div><b>Staff sign-in required</b></div>';
   document.querySelector('#today-label').textContent = dateLabel(TODAY);
   document.querySelector('#nav-followups').textContent = worklist().filter((f) => f.callDate <= TODAY).length;
   nav
@@ -1603,14 +1620,26 @@ async function prepareWorkspace() {
     workspaceBusy = false;
   }
 }
+function refreshMarkup() {
+  if (!connected || !staff) return '';
+  const status = remoteRefreshError
+    ? `<span class="refresh-status error" title="${e(remoteRefreshError)}">Refresh failed</span>`
+    : `<span class="refresh-status">Updated ${e(remoteRefreshedAt || '—')}</span>`;
+  return `<button class="icon-btn" id="refresh-clinic" aria-label="Refresh clinic" title="Refresh clinic (also checks every 60 seconds)"><span aria-hidden="true">↻</span></button>${status}`;
+}
 function urgentAlertMarkup() {
   if (connected && !staff) return '';
-  const refresh = connected
-    ? `${workspaceError && staff?.role === 'admin' ? `<div class="warning-box" role="alert">Fictional workspace preparation paused: ${e(workspaceError)} <button class="btn sm" data-navto="staff">Open Admin & staff</button></div>` : ''}<div class="clinic-refresh"><button class="btn sm" id="refresh-clinic">Refresh clinic</button><span>${remoteRefreshError ? 'Refresh failed: ' + e(remoteRefreshError) : 'Last refreshed ' + e(remoteRefreshedAt || '—') + ' · checks every 60 seconds while this page is visible'}</span></div>`
-    : '';
+  const paused =
+    connected && workspaceError && staff?.role === 'admin'
+      ? `<div class="warning-box" role="alert">Fictional workspace preparation paused: ${e(workspaceError)} <button class="btn sm" data-navto="staff">Open Admin & staff</button></div>`
+      : '';
+  const failed =
+    connected && remoteRefreshError
+      ? `<div class="warning-box" role="alert">${e(remoteRefreshError)}</div>`
+      : '';
   const cases = urgentCases(patients, TODAY);
-  if (!cases.length) return refresh;
-  return `${refresh}<div class="urgent-banner" role="region" aria-label="Urgent clinical reviews"><h2>⚠ ${cases.length} urgent clinical review${cases.length === 1 ? '' : 's'} — action required</h2><p>Review symptoms and arrange clinician assessment. Emergency symptoms require emergency care; do not wait for routine recall. Alerts reflect the latest recorded INR and remain until a newer result changes the risk.</p>${cases.map((c) => `<div class="urgent-row"><div><b>${e(c.name)} · INR ${e(c.inr)}</b><span>${e(c.reason)} · ${dateLabel(c.date)}${c.stale ? ' · Historical result: confirm current status promptly' : ''}</span></div><button class="btn" data-open="${e(c.mrn)}">Open patient</button></div>`).join('')}</div>`;
+  if (!cases.length) return failed + paused;
+  return `${failed}${paused}<section class="urgent-bar${view === 'dashboard' ? '' : ' compact'}" role="region" aria-label="Urgent clinical reviews"><div class="urgent-bar-head"><span class="urgent-icon" aria-hidden="true">!</span><h2>${cases.length} urgent clinical review${cases.length === 1 ? '' : 's'} — action required</h2><details class="urgent-help"><summary>What to do</summary><p>Review symptoms and arrange clinician assessment. Emergency symptoms require emergency care; do not wait for routine recall. Alerts reflect the latest recorded INR and remain until a newer result changes the risk.</p></details></div><div class="urgent-items">${cases.map((c) => `<button class="urgent-item" data-open="${e(c.mrn)}"><span class="urgent-inr">INR ${e(c.inr)}</span><span class="urgent-text"><b>${e(c.name)}</b><small>${e(c.reason)} · ${dateLabel(c.date)}${c.stale ? ' · Historical result: confirm current status promptly' : ''}</small></span><span class="urgent-open">Open patient</span></button>`).join('')}</div></section>`;
 }
 
 async function refreshClinic() {

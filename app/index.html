@@ -11,6 +11,13 @@
     <title>Warfarin Passport · Virtual Clinic</title>
     <link rel="stylesheet" href="./css/styles.css?v=__BUILD__" />
     <link rel="stylesheet" href="./css/care.css?v=__BUILD__" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="./css/theme.css?v=__BUILD__" />
   </head>
   <body class="auth-screen">
     <div id="app" class="app-layout">
@@ -24,15 +31,30 @@
         <div class="sidebar-subhead">WORKSPACE</div>
         <nav id="nav" aria-label="Primary navigation">
           <button data-nav="dashboard" class="nav-item active">
-            <span class="nav-ico">▦</span> Dashboard
+            <span class="nav-ico">▦</span><span class="nav-label">Dashboard</span
+            ><span class="nav-short" aria-hidden="true">Home</span>
           </button>
-          <button data-nav="patients" class="nav-item"><span class="nav-ico">♙</span> Patients</button>
+          <button data-nav="patients" class="nav-item">
+            <span class="nav-ico">♙</span><span class="nav-label">Patients</span
+            ><span class="nav-short" aria-hidden="true">Patients</span>
+          </button>
           <button data-nav="followups" class="nav-item">
-            <span class="nav-ico">◷</span> Follow-ups <span id="nav-followups" class="nav-count">0</span>
+            <span class="nav-ico">◷</span><span class="nav-label">Follow-ups</span
+            ><span class="nav-short" aria-hidden="true">Calls</span>
+            <span id="nav-followups" class="nav-count">0</span>
           </button>
-          <button data-nav="messages" class="nav-item"><span class="nav-ico">✉</span> Team messages</button>
-          <button data-nav="inventory" class="nav-item"><span class="nav-ico">▤</span> Inventory</button>
-          <button data-nav="staff" class="nav-item"><span class="nav-ico">⚙</span> Staff & settings</button>
+          <button data-nav="messages" class="nav-item">
+            <span class="nav-ico">✉</span><span class="nav-label">Team messages</span
+            ><span class="nav-short" aria-hidden="true">Team</span>
+          </button>
+          <button data-nav="inventory" class="nav-item">
+            <span class="nav-ico">▤</span><span class="nav-label">Inventory</span
+            ><span class="nav-short" aria-hidden="true">Stock</span>
+          </button>
+          <button data-nav="staff" class="nav-item">
+            <span class="nav-ico">⚙</span><span class="nav-label">Staff & settings</span
+            ><span class="nav-short" aria-hidden="true">Settings</span>
+          </button>
         </nav>
         <div class="sidebar-foot">
           <span class="status-dot"></span> Prototype · Synthetic data only
@@ -44,10 +66,11 @@
           <button class="mobile-brand" id="menu-button" aria-label="Open navigation">☰</button>
           <div class="breadcrumb" id="breadcrumb">Clinic / Overview</div>
           <div class="top-actions">
+            <div class="refresh-slot" id="refresh-slot"></div>
             <button class="btn sm" id="interface-language" data-no-translate>العربية</button
             ><span class="top-date" id="today-label"></span>
             <div class="user-pill">
-              <div class="avatar">DE</div>
+              <div class="avatar">DC</div>
               <div><b>Demo clinician</b><small>Unverified demo role</small></div>
             </div>
           </div>
