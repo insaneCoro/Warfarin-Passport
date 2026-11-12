@@ -41,3 +41,19 @@ Apps Script/Sheets cannot transact across tabs. A Pending encounter signals inco
 ## Rollback
 
 Disable `config.js` connection first and redeploy the frontend. Restore the prior Apps Script deployment if necessary. Preserve new columns/tabs and every appended history/audit row; never roll back by deleting clinical history. Keep backups restricted to authorized accounts.
+
+## Load fictional sample patients after sign-in
+
+The administrator can add the same four built-in fictional patients to the connected test database. This is a deliberate database write, not a browser-demo overlay or an upload of edited localStorage records.
+
+1. Update the existing Apps Script project's `API.gs`, `Security.gs` and `Database.gs` from this repository. The new `demo.seed` action requires the updated API and dispatch, and the database helper hides incomplete imports.
+2. Save, then choose **Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy** for the existing Web App. Keep Execute as Me / access Anyone and the existing `/exec` URL. Keep all existing Script Properties, including `DATABASE_ID` and `GATEWAY_HMAC_SECRET`. No new schema fields are required for this feature; do not run `setupDatabase` or `bootstrapAdmin` again.
+3. Refresh the site, choose Staff sign-in and use the approved **admin** account.
+4. Open **Staff & settings → Load sample patients** (also reachable through the dashboard's Sample patients button).
+5. Open Patients. The four `DEMO-001`–`DEMO-004` fictional patients include six INR results each, one baseline dosing schedule, tablet inventory and a pending follow-up. Historical INR values are linked to an explicitly labelled fixture-import encounter. No earlier dosing schedule or clinician approval is invented. Entries and audits identify the staff member who actually imported them.
+
+Only an authenticated, approved admin can invoke `demo.seed`, and the endpoint accepts only the fixed built-in fixture set. Repeated imports preserve existing samples, subsequent edits, inventory updates, completed calls and clinical history. A different record already using a sample MRN is skipped without changing it. The browser demo remains separate.
+
+If an import fails partway, an incomplete patient has `Importing` status and is unavailable to the ordinary patient workflow. Retry the same Load sample patients operation: deterministic fixture IDs prevent duplicate rows, and original dates and entry attribution are retained. Already completed imports are skipped. Never delete or recreate the database to retry. As with all Sheets operations, recovery after manual cell modifications needs administrator review.
+
+If the site says the sample loader needs an updated Apps Script deployment, the current Web App version still lacks the new action. Update the three files and deploy a new version as above; changing source code alone does not update an existing Web App deployment.

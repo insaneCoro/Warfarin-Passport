@@ -14,7 +14,7 @@ function patientInput_(x,existing){
  if(enInr!==''&&(enInr<=0||enInr>20))throw Error('Invalid enrollment INR');
  return {mrn,name,dob,diagnosis,phone:clean_(x.phone??existing?.phone,40),caregiver:clean_(x.caregiver??existing?.caregiver,120),caregiverPhone:clean_(x.caregiverPhone??existing?.caregiverPhone,40),targetLow:low,targetHigh:high,enrollmentDate:enroll,enrollmentInr:enInr};
 }
-function patientsList_(p,user){const q=clean_(p.query,150).toLowerCase();return allRows_('Patients').filter(v=>v.status!=='Archived'&&(!q||[v.mrn,v.name,v.phone].some(s=>String(s).toLowerCase().includes(q)))).slice(0,200).map(v=>({id:v.id,mrn:v.mrn,name:v.name,dob:v.dob,diagnosis:v.diagnosis,targetLow:v.targetLow,targetHigh:v.targetHigh,status:v.status}));}
+function patientsList_(p,user){const q=clean_(p.query,150).toLowerCase();return allRows_('Patients').filter(v=>!['Archived','Importing'].includes(v.status)&&(!q||[v.mrn,v.name,v.phone].some(s=>String(s).toLowerCase().includes(q)))).slice(0,200).map(v=>({id:v.id,mrn:v.mrn,name:v.name,dob:v.dob,diagnosis:v.diagnosis,targetLow:v.targetLow,targetHigh:v.targetHigh,status:v.status}));}
 function patientGet_(p,user){const record=requirePatient_(clean_(p.patientId,80)),id=record.id;return {approvals:allRows_('Audit_Log').filter(v=>v.action==='decision.approve'&&allRows_('Encounters').some(e=>e.id===v.recordId&&e.patientId===id)).map(patientView_),patient:patientView_(record),results:allRows_('INR_Results').filter(v=>v.patientId===id&&allRows_('Encounters').some(e=>e.id===v.encounterId&&e.status==='Complete')).map(patientView_),encounters:allRows_('Encounters').filter(v=>v.patientId===id&&v.status==='Complete').map(patientView_),dosePlans:allRows_('Dose_Plans').filter(v=>v.patientId===id&&allRows_('Encounters').some(e=>e.id===v.encounterId&&e.status==='Complete')).map(patientView_),followups:allRows_('Follow_Ups').filter(v=>v.patientId===id).map(patientView_),attempts:allRows_('Followup_Attempts').filter(v=>v.patientId===id).map(patientView_),inventory:allRows_('Inventory').filter(v=>v.patientId===id).map(patientView_),notes:allRows_('Clinical_Notes').filter(v=>v.patientId===id).map(patientView_)};}
 function patientCreate_(p,user){return withLock_(()=>{const data=patientInput_(p);if(allRows_('Patients').some(x=>String(x.mrn).toUpperCase()===data.mrn))throw Error('MRN already exists');const id=Utilities.getUuid();append_('Patients',{...data,id,status:'Active',createdAt:now_(),updatedAt:now_(),createdBy:user.uid,rowVersion:1});audit_(user,'patient.create','Patients',id,'New patient registered');return {id,mrn:data.mrn}})}
 function patientUpdate_(p,user){return withLock_(()=>{const id=clean_(p.patientId,80),old=requirePatient_(id);if(Number(p.expectedVersion)!==Number(old.rowVersion))throw Error('Record changed by another user. Reload before editing.');const data=patientInput_(p,old);if(data.mrn!==String(old.mrn).toUpperCase()&&allRows_('Patients').some(x=>x.id!==id&&String(x.mrn).toUpperCase()===data.mrn))throw Error('MRN already exists');replace_('Patients',{...old,...data,updatedAt:now_(),rowVersion:Number(old.rowVersion)+1});audit_(user,'patient.update','Patients',id,'Demographic/clinical profile updated');return {id,rowVersion:Number(old.rowVersion)+1}})}
@@ -73,3 +73,56 @@ function decisionApprove_(p,user){return withLock_(()=>{
 function inventorySet_(p,user){return withLock_(()=>{const patient=requirePatient_(clean_(p.patientId,80)),strength=Number(p.strengthMg),qty=Number(p.quantity),date=requireDate_(clean_(p.confirmedDate,10));if(!Number.isFinite(strength)||strength<=0||strength>20||!Number.isInteger(qty)||qty<0)throw Error('Invalid stock count or strength');const existing=allRows_('Inventory').find(x=>x.patientId===patient.id&&Number(x.strengthMg)===strength),old=existing?Number(existing.quantity):0,id=existing?existing.id:Utilities.getUuid();const record={id,patientId:patient.id,strengthMg:strength,quantity:qty,confirmedDate:date,updatedAt:now_(),updatedBy:user.uid};existing?replace_('Inventory',{...existing,...record}):append_('Inventory',record);append_('Inventory_Log',{id:Utilities.getUuid(),patientId:patient.id,strengthMg:strength,oldQuantity:old,newQuantity:qty,confirmedDate:date,actorUid:user.uid,createdAt:now_()});audit_(user,'inventory.set','Inventory',id,'Confirmed tablet count updated');return{id,quantity:qty}})}
 function noteCreate_(p,user){return withLock_(()=>{const patient=requirePatient_(clean_(p.patientId,80)),text=clean_(p.text,4000),date=requireDate_(clean_(p.noteDate,10));if(!text)throw Error('Clinical note cannot be empty');const supersedes=clean_(p.supersedes,80),previous=supersedes?findRow_('Clinical_Notes','id',supersedes):null;if(supersedes&&(!previous||previous.patientId!==patient.id))throw Error('Prior note not found');const id=Utilities.getUuid();append_('Clinical_Notes',{id,patientId:patient.id,encounterId:'',noteDate:date,text,supersedes,createdAt:now_(),createdBy:user.uid});audit_(user,supersedes?'note.amend':'note.create','Clinical_Notes',id,{before:previous?.text||null,after:text,supersedes});return{id}})}
 function userUpsert_(p,user){requireAdmin_(user);return withLock_(()=>{const uid=clean_(p.uid,128),email=clean_(p.email,160).toLowerCase(),role=clean_(p.role,20),name=clean_(p.displayName,120);if(!uid||!email||!['admin','subadmin','clinician'].includes(role))throw Error('Invalid staff user');const existing=findRow_('Users','firebaseUid',uid),record={firebaseUid:uid,email,role,active:p.active===false?'false':'true',displayName:name,createdAt:existing?.createdAt||now_(),updatedAt:now_()};existing?replace_('Users',{...existing,...record}):append_('Users',record);audit_(user,'users.upsert','Users',uid,'Staff role/active status updated');return{uid,role}})}
+
+/** Fixed fictional fixtures only. Never import arbitrary browser/localStorage data. */
+function demoSeed_(p,user){
+ requireAdmin_(user);
+ if(p.confirmSynthetic!==true)throw Error('Confirm synthetic test records');
+ return withLock_(()=>{
+  // Validate every tab before any writes. Existing database is never recreated.
+  Object.keys(SCHEMA).forEach(tab_);
+  const snapshot=Object.fromEntries(Object.keys(SCHEMA).map(name=>[name,[...allRows_(name)]]));
+  const insert=(name,record,action)=>fixtureInsert_(name,record,action,user,snapshot);
+  const profiles=[
+   [1,74,'Atrial fibrillation',[2,3],[2.2,2.6,3.2,2.9,2.5,2.6],[5,5,5,5,5,5,5],-2,14],
+   [2,67,'Mechanical mitral valve',[2.5,3.5],[3.0,3.2,2.3,2.9,3.8,3.4],[5,5,7.5,5,5,7.5,5],1,8],
+   [3,82,'Venous thromboembolism',[2,3],[2.1,1.9,2.4,2.2,2.1,1.8],[3,3,3,3,3,3,3],-5,12],
+   [4,78,'Atrial fibrillation',[2,3],[2.4,2.9,2.8,2.3,2.6,2.5],[4,4,4,4,4,4,4],4,29]
+  ];
+  const result={created:[],skipped:[]};
+  profiles.forEach(([n,age,diagnosis,target,inrs,daily,nextOffset,stock])=>{
+   const id='synthetic-fixture-v1-p'+n,mrn='DEMO-'+String(n).padStart(3,'0'),encounterId=id+'-encounter';
+   let patient=snapshot.Patients.find(x=>x.id===id);
+   const collision=snapshot.Patients.find(x=>String(x.mrn).toUpperCase()===mrn&&x.id!==id);
+   // Completed/edited/archived samples and MRN collisions are always preserved.
+   if(collision||(patient&&patient.status!=='Importing')){result.skipped.push(mrn);return;}
+   const anchor=patient?plusCalendarDays_(String(patient.enrollmentDate),75):today_(),stamp=now_();
+   const baseline=plusCalendarDays_(anchor,-7),next=plusCalendarDays_(anchor,nextOffset);
+   const label='Synthetic sample fixture v1. Fictional history for development only; not a clinical prescription or approval.';
+   if(!patient){
+    patient={id,mrn,name:'Sample Patient '+String.fromCharCode(64+n),dob:(Number(anchor.slice(0,4))-age)+'-01-15',phone:'050000000'+n,caregiver:'Demo caregiver',caregiverPhone:'050111000'+n,diagnosis,targetLow:target[0],targetHigh:target[1],enrollmentDate:plusCalendarDays_(anchor,-75),enrollmentInr:inrs[0],status:'Importing',createdAt:stamp,updatedAt:stamp,createdBy:user.uid,rowVersion:1};
+    insert('Patients',patient,'patient.create');
+   }
+   insert('Encounters',{id:encounterId,requestId:encounterId,patientId:id,testDate:baseline,inr:inrs.at(-1),note:label,nextInrDate:next,status:'Pending',createdAt:stamp,createdBy:user.uid},'demo.encounter.import');
+   // Historical tests belong to this explicitly labelled fixture-import encounter.
+   inrs.forEach((inr,i)=>insert('INR_Results',{id:id+'-inr-'+i,patientId:id,testDate:plusCalendarDays_(anchor,-42+i*7),inr,enteredAt:stamp,enteredBy:user.uid,encounterId},'inr.enter'));
+   insert('Dose_Plans',{id:id+'-dose',patientId:id,encounterId,effectiveDate:baseline,...Object.fromEntries(['sun','mon','tue','wed','thu','fri','sat'].map((day,i)=>[day,daily[i]])),weeklyMg:daily.reduce((a,b)=>a+b,0),previousDaily:'',previousWeeklyMg:'',percentChange:'',inr:inrs.at(-1),reason:label,nextInrDate:next,approvedBy:'',approvedAt:'',createdAt:stamp,createdBy:user.uid},'dose.change');
+   insert('Follow_Ups',{id:id+'-followup',patientId:id,encounterId,inrCheckDate:next,callDueDate:plusCalendarDays_(next,2),status:'Pending',createdAt:stamp},'followup.schedule');
+   insert('Inventory',{id:id+'-stock',patientId:id,strengthMg:5,quantity:stock,confirmedDate:plusCalendarDays_(anchor,-10),updatedAt:stamp,updatedBy:user.uid},'demo.inventory.import');
+   insert('Clinical_Notes',{id:id+'-note',patientId:id,encounterId,noteDate:baseline,text:label,createdAt:stamp,createdBy:user.uid,supersedes:''},'note.create');
+   audit_(user,'demo.import.complete','Patients',id,{synthetic:true,source:'fixture-v1',before:{status:'Importing'},after:{status:'Active'}});
+   const encounter=findRow_('Encounters','id',encounterId);
+   if(encounter.status!=='Complete')replace_('Encounters',{...encounter,status:'Complete'});
+   replace_('Patients',{...findRow_('Patients','id',id),status:'Active',updatedAt:stamp});
+   result.created.push(mrn);
+  });
+  return result;
+ });
+}
+function fixtureInsert_(name,record,action,user,snapshot){
+ const prior=snapshot[name].find(x=>x.id===record.id);
+ if(prior&&record.patientId&&prior.patientId!==record.patientId)throw Error('Synthetic fixture ID collision');
+ if(!prior){append_(name,record);snapshot[name].push(record);}
+ const audited=snapshot.Audit_Log.some(a=>a.recordType===name&&a.recordId===record.id&&(a.action===action||a.action==='demo.import.reconcile'));
+ if(!audited){audit_(user,prior?'demo.import.reconcile':action,name,record.id,{synthetic:true,source:'fixture-v1',before:null,after:patientView_(prior||record),entryActor:(prior||record).enteredBy||(prior||record).createdBy||(prior||record).updatedBy||null});snapshot.Audit_Log.push({recordType:name,recordId:record.id,action:prior?'demo.import.reconcile':action});}
+}
