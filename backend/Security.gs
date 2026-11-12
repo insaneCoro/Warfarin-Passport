@@ -130,14 +130,19 @@ function requireAdmin_(user) {
 function actions_() {
   return {
     'auth.me': (p, user) => {
-      const state = workspaceState_();
+      const state = workspaceState_(),
+        workspaceReady = state.mode !== 'development' || !!state.preparedRelease;
       return {
         ...user,
         backendRelease: CLINIC_RELEASE,
         workspaceId: state.id,
         workspaceMode: state.mode,
-        batchPatients: true,
-        workspaceReady: state.mode !== 'development' || !!state.preparedRelease,
+        workspaceReady,
+        // Sign-in asks for the patients in the same request, saving a second slow round trip.
+        // (An admin whose fictional workspace still needs preparing loads patients after preparing it.)
+        ...(p.includeWorkspace === true && (workspaceReady || user.role !== 'admin')
+          ? { patients: patientsWorkspace_(p, user) }
+          : {}),
       };
     },
     'system.status': () => ({ release: CLINIC_RELEASE, features: ['team-messages', 'dose-review', 'ttr'] }),
