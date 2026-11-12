@@ -2,7 +2,7 @@ import {addDays} from './date-utils.mjs';
 export const UW_SOURCE='https://sites.uw.edu/anticoag/drugs/warfarin/';
 export const ACF_SOURCE='https://acforum-excellence.org/Resource-Center/resource_files/-2021-02-10-125746.pdf';
 /** UW simplified maintenance reference; never returns a prescription or changes a schedule. */
-export function doseReview({inr,low,high,weekly,testDate,today,bleeding='unknown',missed='unknown',interactions='unknown',illness='unknown',recentChange='unknown',mechanicalValve=false}){
+export function doseReview({inr,low,high,weekly,testDate,today,bleeding='unknown',missed='unknown',interactions='unknown',illness='unknown',recentChange='unknown',baselineConfirmed='unknown',mechanicalValve=false}){
  const base={source:UW_SOURCE,sourceVersion:'Reviewed 2026-11-12',status:'review',percentRange:null,weeklyRange:null,midpoint:null,hold:'Requires clinician assessment',recheck:'Individualize after clinical review',messages:[]};
  const result=(status,title,message)=>({...base,status,title,messages:[message]});
  if(bleeding==='yes')return result('urgent','Emergency assessment','Bleeding or suspected thrombosis/head injury: follow the emergency pathway regardless of INR. Do not use this nomogram.');
@@ -16,6 +16,7 @@ export function doseReview({inr,low,high,weekly,testDate,today,bleeding='unknown
  try{addDays(testDate,0);if(testDate>today||testDate<addDays(today,-7))return result('review','Review a current result','This INR is future-dated or more than seven days old. Enter a current clinical review before using reference dose ranges.');}catch{return result('review','Check the test date','A valid INR test date is required.');}
  if([bleeding,missed,interactions,illness,recentChange].some(v=>v==='unknown'))return result('review','Confirm the clinical context','Assess bleeding, missed doses, medicines/diet, illness and recent dose changes below to view the reference range.');
  if([missed,interactions,illness,recentChange].some(v=>v==='yes'))return result('review','Clinical factors change the interpretation','Transient causes or a recent dose change may make a routine adjustment inappropriate. Review these factors with the clinician first.');
+ if(baselineConfirmed!=='yes')return result('review','Verify the previous regimen','Confirm the actual previous maintenance schedule with the patient or clinical record before using a weekly-dose reference.');
  if(!Number.isFinite(weekly)||weekly<=0)return result('review','Previous weekly dose is unknown','A verified maintenance regimen is needed; this reference is not for treatment initiation.');
  let range=[0,0],hold='No hold suggested by this maintenance band',recheck='Stable patients: reference interval 4–8 weeks; clinician individualizes';
  if(inr<low){range=[5,15];hold='A one-time reload is a clinician-only decision; none is calculated here';recheck='After a dose change: reference interval 1–2 weeks';}

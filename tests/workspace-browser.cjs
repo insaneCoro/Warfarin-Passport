@@ -8,6 +8,7 @@ const {chromium}=require('playwright');
   await p.locator('#dashboard-registry [data-open]').first().click();await p.getByRole('button',{name:/WhatsApp/}).click();await p.getByRole('heading',{name:'WhatsApp · setup pending'}).waitFor();await p.locator('#modal-form [type=submit]').click();
   await p.getByRole('button',{name:'Review latest INR',exact:true}).click();await p.locator('[name=inr]').fill('4');const today=await p.evaluate(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));await p.locator('[name=inrDate]').fill(today);
   for(const name of ['bleeding','missed','interactions','illness','recentChange'])await p.locator(`[name=${name}]`).selectOption('no');
+  await p.locator('[name=baselineConfirmed]').selectOption('yes');
   await p.getByText(/midpoint example 31.5 mg/).waitFor();if(await p.locator('[name=weeklyMg]').inputValue()!=='35')throw Error('Reference auto-applied dose');
   await p.screenshot({path:`docs/dose-review-${width}.png`,fullPage:false});
   await p.locator('[name=bleeding]').selectOption('yes');await p.getByText('Emergency assessment',{exact:true}).waitFor();if(await p.locator('#reference-output').innerText().then(t=>t.includes('31.5')))throw Error('Emergency still shows numeric dose');await p.getByRole('button',{name:'Cancel',exact:true}).click();
