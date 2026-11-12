@@ -1,4 +1,4 @@
-import { addDays } from './date-utils.mjs';
+import { addDays } from './date-utils.mjs?v=__BUILD__';
 export const UW_SOURCE = 'https://sites.uw.edu/anticoag/drugs/warfarin/';
 export const REVERSAL_SOURCE =
   'https://sites.uw.edu/anticoag/conditions/guidelines-for-reversal-of-anticoagulation/';

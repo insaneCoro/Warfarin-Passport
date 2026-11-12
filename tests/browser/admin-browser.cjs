@@ -31,7 +31,7 @@ const { chromium } = require('playwright');
       let result;
       if (action === 'auth.me')
         result = { uid: 'test-admin', email: 'admin@example.test', displayName: 'Test admin', role: 'admin' };
-      else if (action === 'patients.list') result = [];
+      else if (action === 'patients.list' || action === 'patients.workspace') result = [];
       else if (action === 'staff.requests.list') result = [];
       else if (action === 'users.list') result = users;
       else if (action === 'users.upsert') {

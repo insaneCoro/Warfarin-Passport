@@ -1,4 +1,4 @@
-import { addDays } from './date-utils.mjs';
+import { addDays } from './date-utils.mjs?v=__BUILD__';
 const DAY = 86400000;
 function day(iso) {
   addDays(iso, 0);

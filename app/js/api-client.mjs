@@ -2,10 +2,10 @@ import {
   backendErrorCode,
   connectionErrorMessage,
   safeConnectionCode,
-} from './connection-errors.mjs?v=care-5';
-import { firebaseSignInError } from './auth-errors.mjs';
-import config from './config.js?v=demo-and-staff-3';
-import { usesConnectedApi } from './mode-utils.mjs?v=care-5';
+} from './connection-errors.mjs?v=__BUILD__';
+import { firebaseSignInError } from './auth-errors.mjs?v=__BUILD__';
+import config from './config.js?v=__BUILD__';
+import { usesConnectedApi } from './mode-utils.mjs?v=__BUILD__';
 let session = null,
   refreshing = null;
 export const connectionAvailable = config.enabled;

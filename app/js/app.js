@@ -1,5 +1,4 @@
-import { applyInterfaceLanguage, toggleInterfaceLanguage, uiText } from './ui-language.mjs?v=care-5';
-import { mapLimit } from './async-utils.mjs?v=session-6';
+import { applyInterfaceLanguage, toggleInterfaceLanguage, uiText } from './ui-language.mjs?v=__BUILD__';
 import {
   todayMarkup,
   todayTasks,
@@ -10,12 +9,12 @@ import {
   handleCareClick,
   submitCare,
   initInrWizard,
-} from './care-ui.mjs?v=care-5';
-import { reviewBaseline, latestAssessment, latestResult } from './review-context.mjs?v=care-5';
-import { urgentCases, urgentCase } from './urgent-cases.mjs?v=care-5';
-import { additionalPatients, mergeAdditionalPatients } from './additional-cases.mjs?v=care-5';
-import { ttrForPatient, clinicTTR } from './ttr.mjs';
-import { doseReview, UW_SOURCE, ACF_SOURCE } from './dose-review.mjs?v=care-5';
+} from './care-ui.mjs?v=__BUILD__';
+import { reviewBaseline, latestAssessment, latestResult } from './review-context.mjs?v=__BUILD__';
+import { urgentCases, urgentCase } from './urgent-cases.mjs?v=__BUILD__';
+import { additionalPatients, mergeAdditionalPatients } from './additional-cases.mjs?v=__BUILD__';
+import { ttrForPatient, clinicTTR } from './ttr.mjs?v=__BUILD__';
+import { doseReview, UW_SOURCE, ACF_SOURCE } from './dose-review.mjs?v=__BUILD__';
 import {
   connectionAvailable,
   connected,
@@ -27,9 +26,9 @@ import {
   signOut,
   api,
   patientFromApi,
-} from './api-client.mjs?v=care-5';
-import { doseSummary, followupAttempt } from './clinical-utils.mjs';
-import { addDays, todayRiyadh, dateLabel, ageFromDOB, sumDose } from './date-utils.mjs';
+} from './api-client.mjs?v=__BUILD__';
+import { doseSummary, followupAttempt } from './clinical-utils.mjs?v=__BUILD__';
+import { addDays, todayRiyadh, dateLabel, ageFromDOB, sumDose } from './date-utils.mjs?v=__BUILD__';
 
 // DEMO ONLY. This browser store must never be used for real medical records.
 const DEMO_KEY = 'warfarin-passport-synthetic-demo-v1';
@@ -141,18 +140,19 @@ let staff = null,
   remoteRefreshedAt = '',
   remoteRefreshError = '',
   remoteRefreshBusy = false;
+/** Reloads every patient (sign-in, periodic refresh). */
 async function refreshRemote() {
-  if (staff?.batchPatients) {
-    patients = (await api('patients.workspace', {})).map(patientFromApi);
-    remoteRefreshedAt = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    remoteRefreshError = '';
-    return;
-  }
-  const rows = await api('patients.list', { query: '' });
-  const next = await mapLimit(rows, 3, (p) => api('patients.get', { patientId: p.id }).then(patientFromApi));
-  patients = next;
+  patients = (await api('patients.workspace', {})).map(patientFromApi);
   remoteRefreshedAt = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   remoteRefreshError = '';
+}
+/** After a save, reload only the patient that changed: much faster than reloading the whole clinic. */
+async function refreshPatient(id) {
+  if (!id) return refreshRemote();
+  const fresh = patientFromApi(await api('patients.get', { patientId: id }));
+  const index = patients.findIndex((x) => x.id === id);
+  if (index < 0) patients.push(fresh);
+  else patients[index] = fresh;
 }
 function save() {
   if (connected) return;
@@ -1471,13 +1471,13 @@ async function submitRemote(fd) {
     try {
       await api('decisions.approve', { encounterId: saved.id });
     } catch {
-      await refreshRemote();
+      await refreshPatient(p.id);
       throw Error(
         'Encounter saved; approval did not complete. Review the saved decision before trying approval again.',
       );
     }
   }
-  await refreshRemote();
+  await (action === 'patients.create' ? refreshRemote() : refreshPatient(p.id));
   if (modalType === 'patient') {
     selectedMRN = values.mrn.toUpperCase();
     view = 'passport';
@@ -1612,7 +1612,7 @@ function careContext() {
         if (link) link.value = latest.id;
       }
     },
-    refresh: refreshRemote,
+    refresh: () => refreshPatient(getPatient()?.id),
     close: () => {
       modalRoot.innerHTML = '';
     },
@@ -1636,9 +1636,18 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && view !== 'staff' && view !== 'messages') refreshClinic();
 });
 
-new MutationObserver(() => applyInterfaceLanguage()).observe(document.querySelector('#app'), {
+// Translate once per animation frame, not on every individual DOM change.
+let languageFrame = 0;
+const scheduleLanguage = () => {
+  if (!languageFrame)
+    languageFrame = requestAnimationFrame(() => {
+      languageFrame = 0;
+      applyInterfaceLanguage();
+    });
+};
+new MutationObserver(scheduleLanguage).observe(document.querySelector('#app'), {
   childList: true,
   subtree: true,
 });
-new MutationObserver(() => applyInterfaceLanguage()).observe(modalRoot, { childList: true, subtree: true });
+new MutationObserver(scheduleLanguage).observe(modalRoot, { childList: true, subtree: true });
 applyInterfaceLanguage();

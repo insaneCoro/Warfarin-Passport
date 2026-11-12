@@ -224,16 +224,36 @@ function bootstrapAdmin() {
   return 'Administrator added to approved user list';
 }
 
+/**
+ * Per-request cache. Opening the spreadsheet, checking headers and reading a tab are each slow Google calls,
+ * and one request reads the same tabs many times. Apps Script starts every request with fresh globals;
+ * dispatch_ also clears this at the start of each request, and withLock_ clears cached rows once the lock is
+ * held so writes always work on fresh data. append_/replace_ drop the cached rows of the tab they change.
+ */
+const requestCache_ = { db: null, tabs: {}, rows: {}, workspace: null };
+function clearRequestCache_() {
+  requestCache_.db = null;
+  requestCache_.tabs = {};
+  clearRowCache_();
+}
+function clearRowCache_() {
+  requestCache_.rows = {};
+  requestCache_.workspace = null;
+}
 function database_() {
+  if (requestCache_.db) return requestCache_.db;
   const id = PropertiesService.getScriptProperties().getProperty('DATABASE_ID');
   if (!id) throw new Error('DATABASE_ID is not configured. Run setupDatabase first.');
-  return SpreadsheetApp.openById(id);
+  requestCache_.db = SpreadsheetApp.openById(id);
+  return requestCache_.db;
 }
 function tab_(name) {
+  if (requestCache_.tabs[name]) return requestCache_.tabs[name];
   const sh = database_().getSheetByName(name);
   if (!sh || !SCHEMA[name]) throw new Error('Missing database tab: ' + name);
   const headers = sh.getRange(1, 1, 1, SCHEMA[name].length).getValues()[0];
   if (SCHEMA[name].some((h, i) => headers[i] !== h)) throw Error('Schema migration required: ' + name);
+  requestCache_.tabs[name] = sh;
   return sh;
 }
 function now_() {
@@ -242,10 +262,15 @@ function now_() {
 function today_() {
   return Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd');
 }
+const WORKSPACE_TABS_ = ['Patients', 'Team_Messages', 'Message_Drafts', 'Communications'];
 function allRows_(name) {
-  const workspace = ['Patients', 'Team_Messages', 'Message_Drafts', 'Communications'].includes(name)
-    ? workspaceState_().id
-    : null;
+  if (!requestCache_.rows[name]) requestCache_.rows[name] = readRows_(name);
+  const workspace = WORKSPACE_TABS_.includes(name) ? workspaceState_().id : null;
+  return requestCache_.rows[name]
+    .filter((o) => workspace === null || String(o.workspaceId || '') === workspace)
+    .map((o) => ({ ...o }));
+}
+function readRows_(name) {
   const sh = tab_(name),
     last = sh.getLastRow();
   if (last < 2) return [];
@@ -255,8 +280,7 @@ function allRows_(name) {
       __row: i + 2,
       ...Object.fromEntries(SCHEMA[name].map((k, j) => [k, sheetValue_(v[j])])),
     }))
-    .filter((o) => SCHEMA[name].some((k) => o[k] !== '' && o[k] !== null))
-    .filter((o) => workspace === null || String(o.workspaceId || '') === workspace);
+    .filter((o) => SCHEMA[name].some((k) => o[k] !== '' && o[k] !== null));
 }
 /**
  * Google Sheets turns text such as "2026-11-20" into date cells and getValues() returns Date objects.
@@ -284,11 +308,11 @@ function cell_(x) {
   return x;
 }
 function append_(name, obj) {
-  if (['Patients', 'Team_Messages', 'Message_Drafts', 'Communications'].includes(name))
-    obj = { ...obj, workspaceId: workspaceState_().id };
+  if (WORKSPACE_TABS_.includes(name)) obj = { ...obj, workspaceId: workspaceState_().id };
   const sh = tab_(name);
   const values = SCHEMA[name].map((k) => cell_(obj[k]));
   sh.appendRow(values);
+  delete requestCache_.rows[name];
   return obj;
 }
 function replace_(name, record) {
@@ -310,6 +334,7 @@ function replace_(name, record) {
   tab_(name)
     .getRange(row, 1, 1, SCHEMA[name].length)
     .setValues([SCHEMA[name].map((k) => cell_(record[k]))]);
+  delete requestCache_.rows[name];
   return record;
 }
 function findRow_(name, key, value) {
@@ -405,12 +430,17 @@ function ensureSchemaForRelease_(user) {
 
 /** A reset starts an empty active workspace; historical clinical/audit rows remain intact. */
 function workspaceState_() {
+  if (requestCache_.workspace) return { ...requestCache_.workspace };
   const raw = PropertiesService.getScriptProperties().getProperty('CLINIC_WORKSPACE');
-  if (!raw) return { id: '', mode: 'development', preparedRelease: '' };
-  const state = JSON.parse(raw);
+  const state = raw ? JSON.parse(raw) : { id: '', mode: 'development', preparedRelease: '' };
   if (typeof state.id !== 'string' || !['development', 'empty'].includes(state.mode))
     throw Error('Invalid workspace configuration');
-  return state;
+  requestCache_.workspace = state;
+  return { ...state };
+}
+function saveWorkspaceState_(state) {
+  PropertiesService.getScriptProperties().setProperty('CLINIC_WORKSPACE', JSON.stringify(state));
+  requestCache_.workspace = null;
 }
 function assertWorkspace_(p) {
   if (

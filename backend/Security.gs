@@ -122,89 +122,73 @@ function authorized_(identity) {
 function requireAdmin_(user) {
   if (user.role !== 'admin') throw Error('Admin permission required');
 }
-function dispatch_(payload) {
-  const a = payload.action,
-    p = payload.params || {},
-    user = a === 'auth.me' ? staffAdmission_(payload.user) : authorized_(payload.user);
-  if (!['admin', 'subadmin', 'clinician'].includes(user.role)) return user;
-  ensureSchemaForRelease_(user);
-  const extra = {
+/**
+ * Every staff API action and its handler. Anything not listed is rejected.
+ * Built on demand (not at load time) because Apps Script loads files in order and the handlers live in
+ * other files.
+ */
+function actions_() {
+  return {
+    'auth.me': (p, user) => {
+      const state = workspaceState_();
+      return {
+        ...user,
+        backendRelease: CLINIC_RELEASE,
+        workspaceId: state.id,
+        workspaceMode: state.mode,
+        batchPatients: true,
+        workspaceReady: state.mode !== 'development' || !!state.preparedRelease,
+      };
+    },
+    'system.status': () => ({ release: CLINIC_RELEASE, features: ['team-messages', 'dose-review', 'ttr'] }),
     'staff.requests.list': staffRequestsList_,
     'staff.requests.review': staffRequestReview_,
-    'patients.workspace': patientsWorkspace_,
+    'users.list': (p, user) => {
+      requireAdmin_(user);
+      return allRows_('Users').map((u) => ({
+        uid: u.firebaseUid,
+        email: u.email,
+        role: u.role,
+        active: u.active,
+        displayName: u.displayName,
+      }));
+    },
+    'users.upsert': userUpsert_,
+    'workspace.prepare': workspacePrepare_,
+    'workspace.reset': workspaceReset_,
+    'demo.seed': demoSeed_,
     'clinic.read': () => clinicSettingsRead_(),
     'clinic.save': clinicSettingsSave_,
+    'patients.workspace': patientsWorkspace_,
+    'patients.list': patientsList_,
+    'patients.get': patientGet_,
+    'patients.create': patientCreate_,
+    'patients.update': patientUpdate_,
+    'encounters.create': encounterCreate_,
+    'decisions.approve': decisionApprove_,
+    'followups.list': followupList_,
+    'followups.record': followupRecord_,
+    'followups.complete': followupComplete_,
+    'inventory.set': inventorySet_,
+    'notes.create': noteCreate_,
+    'messages.list': messagesList_,
+    'messages.create': messageCreate_,
     'communications.preferences': communicationPreferences_,
     'communications.validate': communicationValidate_,
     'communications.prepare': communicationPrepare_,
     'communications.record': communicationRecord_,
     'workflow.requestReview': requestClinicalReview_,
   };
-  if (Object.prototype.hasOwnProperty.call(extra, a)) return extra[a](p, user);
-  const read = [
-    'auth.me',
-    'patients.list',
-    'patients.get',
-    'followups.list',
-    'users.list',
-    'messages.list',
-    'system.status',
-  ];
-  if (
-    !read.includes(a) &&
-    ![
-      'patients.create',
-      'patients.update',
-      'encounters.create',
-      'followups.complete',
-      'followups.record',
-      'decisions.approve',
-      'inventory.set',
-      'notes.create',
-      'users.upsert',
-      'demo.seed',
-      'messages.create',
-      'workspace.prepare',
-      'workspace.reset',
-    ].includes(a)
-  )
-    throw Error('Unsupported action');
-  if (a === 'auth.me')
-    return {
-      ...user,
-      backendRelease: CLINIC_RELEASE,
-      workspaceId: workspaceState_().id,
-      workspaceMode: workspaceState_().mode,
-      batchPatients: true,
-      workspaceReady: workspaceState_().mode !== 'development' || !!workspaceState_().preparedRelease,
-    };
-  if (a === 'system.status')
-    return { release: CLINIC_RELEASE, features: ['team-messages', 'dose-review', 'ttr'] };
-  if (a === 'workspace.prepare') return workspacePrepare_(p, user);
-  if (a === 'workspace.reset') return workspaceReset_(p, user);
-  if (a === 'messages.list') return messagesList_(p, user);
-  if (a === 'messages.create') return messageCreate_(p, user);
-  if (a === 'demo.seed') return demoSeed_(p, user);
-  if (a === 'patients.list') return patientsList_(p, user);
-  if (a === 'patients.get') return patientGet_(p, user);
-  if (a === 'patients.create') return patientCreate_(p, user);
-  if (a === 'patients.update') return patientUpdate_(p, user);
-  if (a === 'encounters.create') return encounterCreate_(p, user);
-  if (a === 'followups.list') return followupList_(p, user);
-  if (a === 'followups.record') return followupRecord_(p, user);
-  if (a === 'decisions.approve') return decisionApprove_(p, user);
-  if (a === 'followups.complete') return followupComplete_(p, user);
-  if (a === 'inventory.set') return inventorySet_(p, user);
-  if (a === 'notes.create') return noteCreate_(p, user);
-  if (a === 'users.list') {
-    requireAdmin_(user);
-    return allRows_('Users').map((u) => ({
-      uid: u.firebaseUid,
-      email: u.email,
-      role: u.role,
-      active: u.active,
-      displayName: u.displayName,
-    }));
-  }
-  if (a === 'users.upsert') return userUpsert_(p, user);
+}
+function dispatch_(payload) {
+  clearRequestCache_();
+  const action = payload.action,
+    params = payload.params || {},
+    user = action === 'auth.me' ? staffAdmission_(payload.user) : authorized_(payload.user);
+  // auth.me for someone still awaiting approval returns their pending status only.
+  if (!['admin', 'subadmin', 'clinician'].includes(user.role)) return user;
+  ensureSchemaForRelease_(user);
+  const actions = actions_();
+  if (!Object.prototype.hasOwnProperty.call(actions, action)) throw Error('Unsupported action');
+  return actions[action](params, user);
 }

@@ -1,4 +1,27 @@
 const { chromium } = require('playwright');
+function samplePatient(patientId) {
+  const n = Number(patientId.slice(-1));
+  return {
+    patient: {
+      id: patientId,
+      mrn: 'DEMO-00' + n,
+      name: 'Sample Patient ' + String.fromCharCode(64 + n),
+      dob: '1950-01-15',
+      diagnosis: 'Synthetic test',
+      targetLow: 2,
+      targetHigh: 3,
+      status: 'Active',
+    },
+    results: [],
+    dosePlans: [],
+    encounters: [],
+    followups: [],
+    inventory: [],
+    notes: [],
+    attempts: [],
+    approvals: [],
+  };
+}
 (async () => {
   const browser = await chromium.launch({
     ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
@@ -23,34 +46,14 @@ const { chromium } = require('playwright');
         let result;
         if (action === 'staff.requests.list' || action === 'users.list') result = [];
         else if (action === 'auth.me') result = { uid: 'synthetic-admin', role, displayName: 'Test staff' };
-        else if (action === 'patients.list')
-          result = loaded ? [1, 2, 3, 4, 5, 6, 7].map((n) => ({ id: 'sample-' + n })) : [];
+        else if (action === 'patients.workspace')
+          result = loaded ? [1, 2, 3, 4, 5, 6, 7].map((n) => samplePatient('sample-' + n)) : [];
         else if (action === 'workspace.prepare') {
           imports++;
           loaded = true;
           result = { created: ['DEMO-001', 'DEMO-002', 'DEMO-003', 'DEMO-004'], skipped: [] };
         } else if (action === 'patients.get') {
-          const n = Number(params.patientId.slice(-1));
-          result = {
-            patient: {
-              id: params.patientId,
-              mrn: 'DEMO-00' + n,
-              name: 'Sample Patient ' + String.fromCharCode(64 + n),
-              dob: '1950-01-15',
-              diagnosis: 'Synthetic test',
-              targetLow: 2,
-              targetHigh: 3,
-              status: 'Active',
-            },
-            results: [],
-            dosePlans: [],
-            encounters: [],
-            followups: [],
-            inventory: [],
-            notes: [],
-            attempts: [],
-            approvals: [],
-          };
+          result = samplePatient(params.patientId);
         } else throw Error('Unexpected API action ' + action);
         await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, result }) });
       });
