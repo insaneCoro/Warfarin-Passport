@@ -1,12 +1,16 @@
 # Handoff
-**Status:** IN PROGRESS – Claude
-**Last agent:** Codex
+**Status:** READY
+**Last agent:** Claude
 **Date:** 2026-11-12
-**Last PR:** #29 (merged: yes)
-**Backend (.gs) changed:** no — live deployment version: 14 (previous: 13, for rollback)
+**Last PR:** #31 (merged: yes)
+**Backend (.gs) changed:** yes — live deployment version: 15 (previous: 14, for rollback)
 **Live backend matches main:** yes
 
 ## What was done this turn
+- **Claude, #30 — Real patients: Excel import; demo mode off.** Owner asked to remove the fictional patients and demo and add the clinic's patients from their Excel register, and confirmed storing this data in the app is approved. Admin-only `patients.import` (refused until the fictional workspace is reset; nothing invented — no DOB/dose/approval; dated INR history under a labelled imported encounter; existing MRNs skipped; audited). Additive `Patients` columns `ageText`, `testingSite` (release v6). Real MRNs allowed only after the reset. Admin page "Import patients from Excel" card reads the .xlsx in the browser. Demo mode only on localhost. Backend v14 → 15. Unit 79/79, browser 15/15. **The agent never received or stored the patient data; the owner runs the reset and the import in the app.**
+- **Owner steps pending (in the app):** Admin & staff → Reset development workspace; then Import patients from Excel. Codex's review findings (wrong-patient form context etc., `docs/REVIEW_2026-11-12.md`) are still open and now matter more with real patients — fix #4 (wrong patient) first.
+
+### Earlier this day
 - Owner asked Codex to review everything and propose improvements. Reviewed latest main `9bd582be` and Claude's last merged PR #28, plus the preceding staff-only, repository, session, design and test changes. This turn is review/documentation only; no application behavior, schema, sign-in, Worker or records were changed. Patient access remains removed and fictional records/demo mode remain available.
 - [PR #29](https://github.com/insaneCoro/Warfarin-Passport/pull/29) adds `docs/REVIEW_2026-11-12.md` with reproduced findings, exact code locations, prioritized product improvements and a suggested sequence of focused implementation turns, plus this handoff. Documentation only; implementation findings remain open. READY means the requested review is complete; Claude must wait for the owner to announce its turn.
 - Re-ran `npm test`: **75/75 passed, zero skipped**; `npm run test:browser`: **14/14 passed**; `npm run format:check`: passed. Reviewed English iPad/Arabic phone screenshots. Additional synthetic reproductions found gaps in current regression coverage; they are documented honestly, not presented as already fixed.
@@ -22,12 +26,12 @@
 - The old patient-portal tabs remain in the Google Sheet, unused. Delete them only with owner approval.
 - `patients.list` remains in the backend (used by tests and the session-retry test) though the app now loads with `patients.workspace`.
 - The frontend `care-messages.mjs` duplicates the backend `buildPatientMessage` for the demo preview; a unit test keeps them identical.
-- **Owner decision (2026-11-12): keep the fictional sample patients** (`demoSeed_`, `additional-cases.mjs`, demo mode) — the owner is still trying things out. Do not remove them without asking.
+- **Owner decision (update): fictional patients are being retired.** The owner resets the workspace and imports real patients. Demo mode is off on the website (still used by local browser tests). The fictional sample code can be removed in a later refactor.
 - Session persistence uses `sessionStorage` for the Firebase refresh token only (owner-approved sign-in change). Clinical data stays in memory only. Arabic translation covers interface text; clinical source guidance and fictional case text intentionally stay English. New interface text must be added to the dictionary in `app/js/ui-language.mjs` (the `language` browser test catches common gaps).
 - Everything from Codex's previous handoff about clinical validation, non-ACID Sheets writes, 200-patient cap, manual WhatsApp and synthetic data only still applies.
 
 ## Don't touch without asking
-- The fictional sample patients and demo mode (owner wants to keep them for now).
+- **The live database now holds real patient data (owner-approved).** Never read, export, print, copy into the repo, logs, tests or screenshots any live record. Tests and fixtures stay fictional.
 - Database schema, Sheet tabs/columns, migrations; deleting/archiving records (including the unused portal tabs).
 - Sign-in, roles, authorization, the Cloudflare Worker/build configuration, the HMAC signing key.
 - Anything involving real patient data.
@@ -49,3 +53,4 @@
 | 2026-11-12 | Claude | #25–#27 (merged) | Design overhaul: design system, readable type, compact urgent alerts, phone bottom tab bar, bottom-sheet dialogs | 14 (unchanged; previous 13) |
 | 2026-11-12 | Claude | #28 (merged) | Button audit: removed duplicate/unneeded buttons, simpler dashboard | 14 (unchanged) |
 | 2026-11-12 | Codex | #29 (merged) | Review only: 75 unit/14 browser tests pass; four reproduced findings including wrong-patient form context and chronology, prioritized staff/iPad roadmap and READY handoff; no app/data/config changes | 14 (unchanged; previous 13) |
+| 2026-11-12 | Claude | #30–#31 (merged) | Excel import of real patients (admin, after reset), additive ageText/testingSite, demo mode off on the site | 15 (previous 14) |
