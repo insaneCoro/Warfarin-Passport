@@ -31,6 +31,8 @@ Existing approval for a specific change in the conversation counts; do not ask f
 
 ## Never
 
+- Read, export or copy live patient records anywhere (repo, logs, tests, screenshots, PRs, chat). Since PR #30 the live database holds real patients at the owner's decision; all development and tests remain fictional.
+
 - Re-run `setupDatabase` or `bootstrapAdmin`, delete or recreate the existing database, or replace the existing Apps Script project or deployment.
 - Commit or print `CLASPRC_JSON`, `GATEWAY_HMAC_SECRET`, authentication tokens, private keys, or Script Properties values. Do not download Actions secrets to inspect them. Public Firebase Web configuration is not a private credential.
 - Use real patient data in source, screenshots, fixtures, test accounts, logs or PRs.
