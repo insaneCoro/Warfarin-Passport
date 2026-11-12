@@ -18,7 +18,12 @@ function doPost(e){
     const expected=Utilities.computeHmacSha256Signature(signable,secret).map(v=>('0'+((v+256)%256).toString(16)).slice(-2)).join('');
     if(!constantTimeEqual_(sig,expected))throw Error('Unauthorized request');
     const cache=CacheService.getScriptCache(),nonceKey='nonce-'+nonce;
-    withLock_(()=>{if(cache.get(nonceKey))throw Error('Duplicate request');cache.put(nonceKey,'1',300);});
+    // Execute-as-owner requests share this short user lock. It is separate from
+    // the long-running database script lock, so reads are not blocked by imports.
+    const nonceLock=LockService.getUserLock();let acquired=false;
+    try{acquired=nonceLock.tryLock(3000);}catch{throw busyError_();}
+    if(!acquired)throw busyError_();
+    try{if(cache.get(nonceKey))throw Error('Duplicate request');cache.put(nonceKey,'1',300);}finally{nonceLock.releaseLock();}
     const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(bodyB64)).getDataAsString('UTF-8');
     const payload=JSON.parse(raw);
     if(!payload||typeof payload.action!=='string'||!payload.user?.uid)throw Error('Invalid request');
@@ -26,15 +31,26 @@ function doPost(e){
     output={ok:true,result};
   }catch(err){
     // Never include request payloads, signatures, or PHI in logs.
-    output={ok:false,error:String(err.message||'Request rejected').slice(0,160)};
+    output={ok:false,error:String(err.message||'Request rejected').slice(0,160),...(err.code==='SERVER_BUSY'?{errorCode:'SERVER_BUSY'}:{})};
   }
   return ContentService.createTextOutput(JSON.stringify(output)).setMimeType(ContentService.MimeType.JSON);
 }
 function constantTimeEqual_(a,b){if(typeof a!=='string'||typeof b!=='string')return false;let diff=a.length^b.length;for(let i=0;i<Math.max(a.length,b.length);i++)diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return diff===0}
-function authorized_(identity){const u=findRow_('Users','firebaseUid',identity.uid);if(!u||String(u.active).toLowerCase()!=='true'||!['admin','subadmin','clinician'].includes(u.role))throw Error('User is not approved');
-  // Email is supplementary only; never trust identity from browser without signed gateway assertion.
-  if(u.email&&identity.email&&String(u.email).toLowerCase()!==String(identity.email).toLowerCase())throw Error('User email mismatch');
-  return {uid:u.firebaseUid,role:u.role,email:u.email,displayName:u.displayName};
+function authorized_(identity){
+ if(!identity.uid||String(identity.uid).startsWith('invite:'))throw Error('User is not approved');
+ let u=findRow_('Users','firebaseUid',identity.uid);
+ if(!u&&identity.email&&identity.emailVerified===true){
+  u=withLock_(()=>{
+   const bound=findRow_('Users','firebaseUid',identity.uid);if(bound)return bound;
+   const matches=allRows_('Users').filter(r=>String(r.email).toLowerCase()===String(identity.email).toLowerCase());
+   if(matches.length!==1||!String(matches[0].firebaseUid).startsWith('invite:')||String(matches[0].active).toLowerCase()!=='true')throw Error('User is not approved');
+   const invitation=matches[0],record={...invitation,firebaseUid:identity.uid,updatedAt:now_()};
+   replace_('Users',record);audit_({uid:identity.uid,role:record.role},'users.invitation.accept','Users',identity.uid,JSON.stringify({invitation:invitation.firebaseUid,email:record.email}));return record;
+  });
+ }
+ if(!u||String(u.active).toLowerCase()!=='true'||!['admin','subadmin','clinician'].includes(u.role))throw Error('User is not approved');
+ if(u.email&&String(u.email).toLowerCase()!==String(identity.email||'').toLowerCase())throw Error('User email mismatch');
+ return {uid:u.firebaseUid,role:u.role,email:u.email,displayName:u.displayName};
 }
 function requireAdmin_(user){if(user.role!=='admin')throw Error('Admin permission required')}
 function dispatch_(payload){const user=authorized_(payload.user),a=payload.action,p=payload.params||{};

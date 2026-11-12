@@ -1,5 +1,6 @@
 /** CRUD operations on Google Sheets. User identity is verified via signed gateway assertion. */
-function withLock_(fn){const lock=LockService.getScriptLock();lock.waitLock(20000);try{return fn()}finally{lock.releaseLock()}}
+function busyError_(){const error=Error('Clinic is busy saving another request. Please wait a moment and retry.');error.code='SERVER_BUSY';return error;}
+function withLock_(fn){const lock=LockService.getScriptLock();let acquired=false;try{acquired=lock.tryLock(5000);}catch{throw busyError_();}if(!acquired)throw busyError_();try{return fn()}finally{lock.releaseLock()}}
 function patientView_(p){const o={...p};delete o.__row;return o}
 function riskSnapshot_(p){return {riskLevel:p.riskLevel||'routine',riskCategory:p.riskCategory||'',riskReason:p.riskReason||'',riskReviewDate:p.riskReviewDate||''};}
 function riskInput_(p,existing={}){
@@ -96,7 +97,7 @@ function decisionApprove_(p,user){return withLock_(()=>{
 })}
 function inventorySet_(p,user){return withLock_(()=>{const patient=requirePatient_(clean_(p.patientId,80)),strength=Number(p.strengthMg),qty=Number(p.quantity),date=requireDate_(clean_(p.confirmedDate,10));if(!Number.isFinite(strength)||strength<=0||strength>20||!Number.isInteger(qty)||qty<0)throw Error('Invalid stock count or strength');const existing=allRows_('Inventory').find(x=>x.patientId===patient.id&&Number(x.strengthMg)===strength),old=existing?Number(existing.quantity):0,id=existing?existing.id:Utilities.getUuid();const record={id,patientId:patient.id,strengthMg:strength,quantity:qty,confirmedDate:date,updatedAt:now_(),updatedBy:user.uid};existing?replace_('Inventory',{...existing,...record}):append_('Inventory',record);append_('Inventory_Log',{id:Utilities.getUuid(),patientId:patient.id,strengthMg:strength,oldQuantity:old,newQuantity:qty,confirmedDate:date,actorUid:user.uid,createdAt:now_()});audit_(user,'inventory.set','Inventory',id,'Confirmed tablet count updated');return{id,quantity:qty}})}
 function noteCreate_(p,user){return withLock_(()=>{const patient=requirePatient_(clean_(p.patientId,80)),text=clean_(p.text,4000),date=requireDate_(clean_(p.noteDate,10));if(!text)throw Error('Clinical note cannot be empty');const supersedes=clean_(p.supersedes,80),previous=supersedes?findRow_('Clinical_Notes','id',supersedes):null;if(supersedes&&(!previous||previous.patientId!==patient.id))throw Error('Prior note not found');const id=Utilities.getUuid();append_('Clinical_Notes',{id,patientId:patient.id,encounterId:'',noteDate:date,text,supersedes,createdAt:now_(),createdBy:user.uid});audit_(user,supersedes?'note.amend':'note.create','Clinical_Notes',id,{before:previous?.text||null,after:text,supersedes});return{id}})}
-function userUpsert_(p,user){requireAdmin_(user);return withLock_(()=>{const uid=clean_(p.uid,128),email=clean_(p.email,160).toLowerCase(),role=clean_(p.role,20),name=clean_(p.displayName,120);if(!uid||!email||!['admin','subadmin','clinician'].includes(role))throw Error('Invalid staff user');const existing=findRow_('Users','firebaseUid',uid),record={firebaseUid:uid,email,role,active:p.active===false?'false':'true',displayName:name,createdAt:existing?.createdAt||now_(),updatedAt:now_()};existing?replace_('Users',{...existing,...record}):append_('Users',record);audit_(user,'users.upsert','Users',uid,'Staff role/active status updated');return{uid,role}})}
+function userUpsert_(p,user){requireAdmin_(user);return withLock_(()=>{let uid=clean_(p.uid,128);const email=clean_(p.email,160).toLowerCase(),role=clean_(p.role,20),name=clean_(p.displayName,120);if(!email||!['admin','subadmin','clinician'].includes(role))throw Error('Invalid staff user');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!name)throw Error('Valid staff email and name required');if(!uid){const matches=allRows_('Users').filter(u=>String(u.email).toLowerCase()===email);if(matches.length)throw Error('Email already exists. Edit the existing staff member.');uid='invite:'+Utilities.getUuid();}else if(!findRow_('Users','firebaseUid',uid))throw Error('Staff record not found');if(allRows_('Users').some(u=>u.firebaseUid!==uid&&String(u.email).toLowerCase()===email))throw Error('Email already exists');if(uid===user.uid&&(role!=='admin'||p.active===false))throw Error('You cannot remove your own administrator access');const existing=findRow_('Users','firebaseUid',uid);if(existing?.role==='admin'&&String(existing.active).toLowerCase()==='true'&&(role!=='admin'||p.active===false)&&allRows_('Users').filter(u=>u.role==='admin'&&String(u.active).toLowerCase()==='true').length<2)throw Error('Keep at least one active administrator');const record={firebaseUid:uid,email,role,active:p.active===false?'false':'true',displayName:name,createdAt:existing?.createdAt||now_(),updatedAt:now_()};if(existing&&!uid.startsWith('invite:')&&String(existing.email).toLowerCase()!==email)throw Error('Existing account email cannot be changed here');existing?replace_('Users',{...existing,...record}):append_('Users',record);audit_(user,'users.upsert','Users',uid,JSON.stringify({before:existing?{email:existing.email,role:existing.role,active:existing.active,displayName:existing.displayName}:null,after:record}));return{uid,role}})}
 
 /** Fixed fictional fixtures only. Never import arbitrary browser/localStorage data. */
 function demoSeed_(p,user){
@@ -114,8 +115,9 @@ function demoSeed_(p,user){
    [4,78,'Atrial fibrillation',[2,3],[2.4,2.9,2.8,2.3,2.6,2.5],[4,4,4,4,4,4,4],4,29],
    ...additionalDemoProfiles_().map(c=>[c.n,c.age,c.diagnosis,c.target,c.inrs,c.daily,c.nextOffset,c.stock,c])
   ];
-  const result={created:[],skipped:[]};
-  profiles.forEach(([n,age,diagnosis,target,inrs,daily,nextOffset,stock,meta={}])=>{
+  const unfinished=profiles.filter(([n])=>{const id='synthetic-fixture-v1-p'+n,mrn='DEMO-'+String(n).padStart(3,'0'),patient=snapshot.Patients.find(x=>x.id===id);return !snapshot.Patients.some(x=>String(x.mrn).toUpperCase()===mrn&&x.id!==id)&&(!patient||patient.status==='Importing');});
+  const result={created:[],skipped:profiles.filter(p=>!unfinished.includes(p)).map(([n])=>'DEMO-'+String(n).padStart(3,'0')),remaining:unfinished.length,total:profiles.length};
+  unfinished.slice(0,1).forEach(([n,age,diagnosis,target,inrs,daily,nextOffset,stock,meta={}])=>{
    const id='synthetic-fixture-v1-p'+n,mrn='DEMO-'+String(n).padStart(3,'0'),encounterId=id+'-encounter';
    let patient=snapshot.Patients.find(x=>x.id===id);
    const collision=snapshot.Patients.find(x=>String(x.mrn).toUpperCase()===mrn&&x.id!==id);
@@ -139,7 +141,7 @@ function demoSeed_(p,user){
    const encounter=findRow_('Encounters','id',encounterId);
    if(encounter.status!=='Complete')replace_('Encounters',{...encounter,status:'Complete'});
    replace_('Patients',{...findRow_('Patients','id',id),status:'Active',updatedAt:stamp});
-   result.created.push(mrn);
+   result.created.push(mrn);result.remaining--;
   });
   return result;
  });
