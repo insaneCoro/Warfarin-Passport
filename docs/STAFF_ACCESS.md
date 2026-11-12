@@ -36,3 +36,7 @@ A busy database returns a fixed English message with a bounded retry only when l
 ## Deployment
 
 Deploy the Worker change along with Apps Script and the frontend. The Worker must forward `emailVerified` from the verified Firebase token claim (`email_verified === true`); browser parameters never supply it. An older Worker cannot accept new email approvals, but existing UID approvals still work. Use the existing backend deployment workflow and Cloudflare repository deployment; no new credentials or service account are required. Firebase Email/Password authentication and email templates remain configured in the existing project. Test the complete email-delivery flow with synthetic staff before clinical use.
+
+## Login and tab recovery
+
+A ready workspace is reported with the authenticated account response, so normal sign-in skips fictional initialization. Preparation is independent of application release numbers and only resumes when unfinished. Patient details load with at most three concurrent requests. An interrupted read has a bounded retry; an uncertain mutation is never automatically repeated. A transient initial data-read failure keeps the authenticated session and shows Refresh clinic rather than forcing another sign-in. Tokens renew through Firebase Secure Token using an in-memory refresh token; tokens and patient data are not persisted to browser storage. Returning from a background tab refreshes clinical views when no form is open. If iPadOS fully discards the page, signing in again is still required.
