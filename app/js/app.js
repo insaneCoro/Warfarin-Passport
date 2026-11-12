@@ -29,6 +29,7 @@ import {
   hasSavedSession,
   restoreSession,
 } from './api-client.mjs?v=__BUILD__';
+import { readWorkbook, registerRows } from './xlsx-import.mjs?v=__BUILD__';
 import { doseSummary, followupAttempt } from './clinical-utils.mjs?v=__BUILD__';
 import { addDays, todayRiyadh, dateLabel, ageFromDOB, sumDose } from './date-utils.mjs?v=__BUILD__';
 
@@ -631,7 +632,7 @@ function pagePassport() {
     ]
       .filter((v) => v.text)
       .sort((a, b) => b.date.localeCompare(a.date));
-  return `<button class="back-link" data-navto="patients">← Patient registry</button><header class="passport-header"><div><p class="eyebrow">PATIENT PASSPORT</p><h1>${e(p.name)}</h1><p>${e(p.mrn)} · ${ageFromDOB(p.dob, TODAY)} years · ${e(p.phone || 'No telephone')}</p></div><div class="mini-actions"><button class="btn" data-modal="edit">Edit details</button><button class="btn" data-modal="risk">High-risk status</button><button class="btn whatsapp-btn" data-care-message="reminder" aria-label="Prepare WhatsApp message" title="Prepare WhatsApp message"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 .8A15.1 15.1 0 0 0 3 23.5L.8 31.2l7.9-2.1A15.2 15.2 0 1 0 16 .8Zm0 27.7a12.5 12.5 0 0 1-6.4-1.8l-.5-.3-4.7 1.3 1.3-4.6-.3-.5A12.6 12.6 0 1 1 16 28.5Zm6.9-9.4c-.4-.2-2.2-1.1-2.5-1.2-.4-.1-.6-.2-.9.2-.2.4-.9 1.2-1.1 1.4-.2.2-.4.3-.8.1-.4-.2-1.6-.6-3-1.9-1.1-1-1.9-2.2-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7.4-.6c.1-.2 0-.5 0-.7l-1.1-2.7c-.3-.7-.6-.6-.9-.6h-.7c-.3 0-.7.1-1 .5s-1.3 1.3-1.3 3.1 1.4 3.6 1.6 3.9c.2.2 2.7 4.1 6.5 5.7.9.4 1.6.6 2.2.8.9.3 1.7.2 2.3.1.7-.1 2.2-.9 2.5-1.8.3-.9.3-1.7.2-1.8-.1-.2-.3-.3-.7-.5Z"/></svg><span class="sr-only">WhatsApp</span></button></div></header>${isHighRisk(p) ? `<section class="patient-risk-banner"><div><b>High-risk patient · ${e(riskCategoryLabel(p.riskCategory))}</b><p>${e(p.riskReason)}</p><small>Review: ${dateLabel(p.riskReviewDate)}${p.riskUpdatedBy ? ' · Recorded by ' + e(p.riskUpdatedBy) : ''}</small></div></section>` : ''}
+  return `<button class="back-link" data-navto="patients">← Patient registry</button><header class="passport-header"><div><p class="eyebrow">PATIENT PASSPORT</p><h1>${e(p.name)}</h1><p>${e(p.mrn)} · ${p.dob ? ageFromDOB(p.dob, TODAY) + ' years' : e(p.ageText || 'Age not recorded')} · ${e(p.phone || 'No telephone')}</p></div><div class="mini-actions"><button class="btn" data-modal="edit">Edit details</button><button class="btn" data-modal="risk">High-risk status</button><button class="btn whatsapp-btn" data-care-message="reminder" aria-label="Prepare WhatsApp message" title="Prepare WhatsApp message"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 .8A15.1 15.1 0 0 0 3 23.5L.8 31.2l7.9-2.1A15.2 15.2 0 1 0 16 .8Zm0 27.7a12.5 12.5 0 0 1-6.4-1.8l-.5-.3-4.7 1.3 1.3-4.6-.3-.5A12.6 12.6 0 1 1 16 28.5Zm6.9-9.4c-.4-.2-2.2-1.1-2.5-1.2-.4-.1-.6-.2-.9.2-.2.4-.9 1.2-1.1 1.4-.2.2-.4.3-.8.1-.4-.2-1.6-.6-3-1.9-1.1-1-1.9-2.2-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7.4-.6c.1-.2 0-.5 0-.7l-1.1-2.7c-.3-.7-.6-.6-.9-.6h-.7c-.3 0-.7.1-1 .5s-1.3 1.3-1.3 3.1 1.4 3.6 1.6 3.9c.2.2 2.7 4.1 6.5 5.7.9.4 1.6.6 2.2.8.9.3 1.7.2 2.3.1.7-.1 2.2-.9 2.5-1.8.3-.9.3-1.7.2-1.8-.1-.2-.3-.3-.7-.5Z"/></svg><span class="sr-only">WhatsApp</span></button></div></header>${isHighRisk(p) ? `<section class="patient-risk-banner"><div><b>High-risk patient · ${e(riskCategoryLabel(p.riskCategory))}</b><p>${e(p.riskReason)}</p><small>Review: ${dateLabel(p.riskReviewDate)}${p.riskUpdatedBy ? ' · Recorded by ' + e(p.riskUpdatedBy) : ''}</small></div></section>` : ''}
  ${workflowMarkup(p, connected, staff?.role)}${approvedPlanMarkup(p)}<section class="passport-metrics"><div><small>Target INR</small><strong>${e(p.targetLow ?? '—')}–${e(p.targetHigh ?? '—')}</strong><span>${e(p.diagnosis)}</span></div><div><small>Latest INR</small><strong>${e(result?.value ?? '—')} ${result ? tag(...rangeStatus(p, result.value)) : ''}</strong><span>${dateLabel(result?.date)}</span></div><div><small>Next INR test</small><strong>${dateLabel(follow?.inrDate)}</strong><span>Call ${dateLabel(follow?.callDate)}</span></div><div><small>Time in range · Rosendaal</small><strong>${ttr.percent === null ? '—' : ttr.percent + '%'}</strong><span>${ttr.percent === null ? ttr.reason : `${Math.round(ttr.observedDays)} days observed · ${ttr.provisional ? 'provisional' : '6-month maintenance'}`}</span></div><div><small>Recorded weekly dose</small><strong>${dose ? money(sumDose(d)) + ' mg' : '—'}</strong><span>${dose?.approvedBy ? 'Approved by ' + e(dose.approvedBy) : 'No authenticated approval'}</span></div></section>
  <nav class="passport-tabs" aria-label="Passport sections"><a href="#dose-review">Dose review</a><a href="#monitoring">INR & TTR</a><a href="#history">Dose history</a><a href="#followup">Follow-up</a><a href="#notes">Notes</a></nav>
  <section class="dose-review-card" id="dose-review"><div class="card-header"><div><h2>Dose review ${result ? '— INR ' + e(result.value) : ''}</h2><small>Source-linked reference support · clinician decisions are saved separately</small></div><button class="btn primary" data-modal="review">Review latest INR</button></div><div class="review-summary"><div class="review-next"><p class="form-help">${e(baseline.kind)}</p>${reviewResultMarkup(patientManagement(p), baseline.weekly)}${baseline.decision ? `<div class="saved-decision"><b>Saved clinician-entered decision: ${money(baseline.decision.weekly ?? sumDose(baseline.decision.daily))} mg/week</b><p>${e(baseline.decision.reason || '')} · ${baseline.decision.approvedBy ? 'Authenticated approval: ' + e(baseline.decision.approvedBy) : 'No authenticated approval'}</p><p>The reference above uses the previous regimen. It does not adjust this saved dose again.</p></div>` : ''}</div><div><span class="label">Recorded Sun–Sat schedule</span><div class="grid-days">${DAYS.map((day, i) => `<div class="dose-day"><small>${day}</small><strong>${e(d[i])} <span>mg</span></strong></div>`).join('')}</div></div></div>${result && result.value >= 4.5 ? '<div class="risk-callout">High INR: prompt clinician review. Do not wait for the routine follow-up date.</div>' : ''}<p class="source-line"><a href="${UW_SOURCE}" target="_blank" rel="noopener">UW Medicine: maintenance nomograms & monitoring</a> · <a href="${ACF_SOURCE}" target="_blank" rel="noopener">Anticoagulation Forum reference link</a> <span>AC Forum PDF contents remain unverified.</span></p></section>
@@ -649,7 +650,11 @@ function pagePassport() {
      '',
    )}</tbody></table></div></section><section id="notes" class="card"><div class="card-header"><h2>Clinical notes</h2><button class="inline-action" data-modal="note">+ Note</button></div>${allNotes.map((n) => `<div class="note-block"><small>${dateLabel(n.date)} · ${e(n.by)}</small>${e(n.text)}</div>`).join('') || '<div class="empty">No clinical notes.</div>'}</section></div>
  <div class="section-grid"><section class="card"><div class="card-header"><h2>Patient details</h2></div><div class="info-list">${[
-   ['Date of birth', dateLabel(p.dob)],
+   [
+     'Date of birth',
+     p.dob ? dateLabel(p.dob) : p.ageText ? 'Not recorded · age ' + p.ageText : 'Not recorded',
+   ],
+   ...(p.testingSite ? [['Testing site', p.testingSite]] : []),
    ['Caregiver', p.caregiver || '—'],
    ['Caregiver telephone', p.caregiverPhone || '—'],
    ['Warfarin started', dateLabel(p.warfarinStartDate)],
@@ -756,7 +761,7 @@ function pageStaff() {
       ['admin', 'Administrator — accounts/settings'],
     ],
     staffDraft.role,
-  )}<label class="checkbox-line"><input name="active" type="checkbox" ${staffDraft.active ? 'checked' : ''}> Active access</label><p class="form-help">Administrator access does not add a clinician signature. You cannot disable or remove your own administrator access.</p><p id="staff-result" role="status" aria-live="polite"></p><div class="mini-actions"><button class="btn primary" type="submit">Save staff access</button>${staffDraft.uid ? '<button class="btn" type="button" id="new-staff">Cancel editing</button>' : ''}</div></form></section></div><section class="card pad reset-card"><h2>Reset development workspace</h2><p>Fictional patients and handovers are populated automatically. Reset starts an empty workspace and turns off automatic fictional data. Historical records and audit events remain archived; staff accounts and configuration are preserved.</p>${workspaceError ? `<p class="warning-box" role="alert">${e(workspaceError)}</p><button class="btn" id="retry-workspace">Retry preparation</button>` : ''}${workspaceBusy ? '<p role="status">Preparing fictional workspace…</p>' : ''}<button class="btn danger" id="reset-workspace" ${staff.workspaceMode === 'empty' ? 'disabled' : ''}>Reset development workspace</button></section>`;
+  )}<label class="checkbox-line"><input name="active" type="checkbox" ${staffDraft.active ? 'checked' : ''}> Active access</label><p class="form-help">Administrator access does not add a clinician signature. You cannot disable or remove your own administrator access.</p><p id="staff-result" role="status" aria-live="polite"></p><div class="mini-actions"><button class="btn primary" type="submit">Save staff access</button>${staffDraft.uid ? '<button class="btn" type="button" id="new-staff">Cancel editing</button>' : ''}</div></form></section></div><section class="card pad reset-card"><h2>Reset development workspace</h2><p>Fictional patients and handovers are populated automatically. Reset starts an empty workspace and turns off automatic fictional data. Historical records and audit events remain archived; staff accounts and configuration are preserved.</p>${workspaceError ? `<p class="warning-box" role="alert">${e(workspaceError)}</p><button class="btn" id="retry-workspace">Retry preparation</button>` : ''}${workspaceBusy ? '<p role="status">Preparing fictional workspace…</p>' : ''}<button class="btn danger" id="reset-workspace" ${staff.workspaceMode === 'empty' ? 'disabled' : ''}>Reset development workspace</button></section>${importCardMarkup()}`;
 }
 async function saveStaffAccess(form) {
   if (staff?.role !== 'admin') return;
@@ -868,7 +873,7 @@ function openModal(type) {
     const editing = type === 'edit';
     modal(
       editing ? 'Edit patient information' : 'Register synthetic patient',
-      `<div class="form-grid">${field('mrn', 'MRN *', editing ? p.mrn : 'DEMO-', 'text', editing ? 'readonly' : 'required')}${field('name', 'Patient name *', editing ? p.name : '', 'text', 'required')}${field('dob', 'Date of birth *', editing ? p.dob : '', 'date', 'required')}${field('diagnosis', 'Diagnosis / indication *', editing ? p.diagnosis : '', 'text', 'required')}${field('phone', 'Contact number', editing ? p.phone : '')}${field('caregiver', 'Caregiver', editing ? p.caregiver : '')}${field('caregiverPhone', 'Caregiver phone', editing ? p.caregiverPhone : '')}${field('warfarinStartDate', 'Warfarin start date (if known)', editing ? p.warfarinStartDate : '', 'date')}${field('enrollmentDate', 'Enrollment date', editing ? p.enrollmentDate : TODAY, 'date')}${field('enrollmentInr', 'INR on enrollment', editing ? p.enrollmentInr : '', 'number', 'step="0.1" min="0" max="20"')}${field('targetLow', 'Target INR lower', editing ? p.targetLow : '', 'number', 'step="0.1" min="0" max="20"')}${field('targetHigh', 'Target INR upper', editing ? p.targetHigh : '', 'number', 'step="0.1" min="0" max="20"')}${riskFields(editing ? p : {})}</div><div class="warning-box">Demonstration only: enter fictional identifiers and patient information.</div>`,
+      `<div class="form-grid">${field('mrn', 'MRN *', editing ? p.mrn : realRecords() ? '' : 'DEMO-', 'text', editing ? 'readonly' : 'required')}${field('name', 'Patient name *', editing ? p.name : '', 'text', 'required')}${field('dob', editing && !p.dob ? 'Date of birth (if known)' : 'Date of birth *', editing ? p.dob : '', 'date', editing && !p.dob ? '' : 'required')}${field('diagnosis', 'Diagnosis / indication *', editing ? p.diagnosis : '', 'text', 'required')}${field('phone', 'Contact number', editing ? p.phone : '')}${field('caregiver', 'Caregiver', editing ? p.caregiver : '')}${field('caregiverPhone', 'Caregiver phone', editing ? p.caregiverPhone : '')}${field('warfarinStartDate', 'Warfarin start date (if known)', editing ? p.warfarinStartDate : '', 'date')}${field('enrollmentDate', 'Enrollment date', editing ? p.enrollmentDate : TODAY, 'date')}${field('enrollmentInr', 'INR on enrollment', editing ? p.enrollmentInr : '', 'number', 'step="0.1" min="0" max="20"')}${field('targetLow', 'Target INR lower', editing ? p.targetLow : '', 'number', 'step="0.1" min="0" max="20"')}${field('targetHigh', 'Target INR upper', editing ? p.targetHigh : '', 'number', 'step="0.1" min="0" max="20"')}${riskFields(editing ? p : {})}</div><div class="warning-box">Demonstration only: enter fictional identifiers and patient information.</div>`,
     );
     updateRiskFields();
     return;
@@ -977,11 +982,12 @@ async function submitForm(fd) {
       name = String(fd.get('name') || '').trim(),
       dob = fd.get('dob'),
       diagnosis = String(fd.get('diagnosis') || '').trim();
-    if (!mrn || !name || !dob || !diagnosis)
+    if (!mrn || !name || (!dob && !(updating && getPatient()?.ageText)) || !diagnosis)
       throw Error('MRN, name, date of birth, and diagnosis are required.');
     if (!updating && patients.some((p) => p.mrn === mrn)) throw Error('This MRN already exists.');
     if (dob > TODAY) throw Error('Date of birth cannot be in the future.');
-    if (!mrn.startsWith('DEMO-')) throw Error('Use a DEMO- MRN in this prototype, never a real MRN.');
+    if (!realRecords() && !mrn.startsWith('DEMO-'))
+      throw Error('Use a DEMO- MRN in the fictional workspace, never a real MRN.');
     const targetLow = fd.get('targetLow') === '' ? null : Number(fd.get('targetLow')),
       targetHigh = fd.get('targetHigh') === '' ? null : Number(fd.get('targetHigh'));
     if ((targetLow === null) !== (targetHigh === null) || (targetLow !== null && targetLow >= targetHigh))
@@ -1426,7 +1432,7 @@ async function submitRemote(fd) {
   } else if (modalType === 'patient' || modalType === 'edit') {
     action = modalType === 'edit' ? 'patients.update' : 'patients.create';
     params = { ...values, patientId: p?.id, expectedVersion: p?.rowVersion };
-    if (!values.mrn.startsWith('DEMO-')) throw Error('Synthetic DEMO- identifiers only');
+    if (!realRecords() && !values.mrn.startsWith('DEMO-')) throw Error('Synthetic DEMO- identifiers only');
   } else if (modalType === 'encounter') {
     action = 'encounters.create';
     params = {
@@ -1702,3 +1708,78 @@ new MutationObserver(scheduleLanguage).observe(document.querySelector('#app'), {
 });
 new MutationObserver(scheduleLanguage).observe(modalRoot, { childList: true, subtree: true });
 applyInterfaceLanguage();
+
+/** True once the fictional workspace has been reset: real record numbers are allowed. */
+function realRecords() {
+  return connected && staff?.workspaceMode === 'empty';
+}
+/* ---------- Import existing patients from the clinic Excel register (admin) ---------- */
+let pendingImport = null,
+  importStatus = '',
+  importBusy = false;
+function importCardMarkup() {
+  if (!connected || staff?.role !== 'admin') return '';
+  const body =
+    staff.workspaceMode !== 'empty'
+      ? '<p class="warning-box">First use <b>Reset development workspace</b> above to remove the fictional patients. Real patients can only be imported into a reset workspace, so the two never mix.</p>'
+      : `<p>Choose the clinic's Excel register (.xlsx). You will see a preview before anything is saved. Patients already in the clinic (same MRN) are skipped, so uploading the file again is safe. No dose, date of birth or clinician approval is created.</p><label class="btn" for="import-file">Choose Excel file</label><input id="import-file" type="file" accept=".xlsx" hidden>${
+          pendingImport
+            ? `<p><b>${pendingImport.rows.filter((r) => r.mrn).length}</b> patients ready to import · <b>${pendingImport.rows.reduce((n, r) => n + r.results.length, 0)}</b> INR results</p>${
+                pendingImport.warnings.length
+                  ? `<details class="warning-box"><summary>${pendingImport.warnings.length} things to check in the file</summary><ul>${pendingImport.warnings.map((w) => `<li>${e(w)}</li>`).join('')}</ul></details>`
+                  : ''
+              }<div class="table-wrap"><table><thead><tr><th>MRN</th><th>Patient</th><th>Age</th><th>Target</th><th>INR results</th><th>Next INR</th></tr></thead><tbody>${pendingImport.rows
+                .slice(0, 8)
+                .map(
+                  (r) =>
+                    `<tr><td>${e(r.mrn || '—')}</td><td>${e(r.name)}</td><td>${e(r.ageText)}</td><td>${e(r.targetLow)}–${e(r.targetHigh)}</td><td>${r.results.length}</td><td>${e(r.nextInrDate || '—')}</td></tr>`,
+                )
+                .join(
+                  '',
+                )}</tbody></table></div>${pendingImport.rows.length > 8 ? `<p class="form-help">…and ${pendingImport.rows.length - 8} more.</p>` : ''}<div class="mini-actions"><button class="btn primary" id="run-import" ${importBusy ? 'disabled' : ''}>Import ${pendingImport.rows.filter((r) => r.mrn).length} patients</button><button class="btn" id="cancel-import" ${importBusy ? 'disabled' : ''}>Cancel</button></div>`
+            : ''
+        }`;
+  return `<section class="card pad import-card"><h2>Import patients from Excel</h2>${body}${importStatus ? `<p role="status" class="import-status">${e(importStatus)}</p>` : ''}</section>`;
+}
+document.addEventListener('change', async (ev) => {
+  if (ev.target.id !== 'import-file' || !ev.target.files?.[0]) return;
+  try {
+    pendingImport = registerRows(await readWorkbook(await ev.target.files[0].arrayBuffer()));
+    importStatus = '';
+  } catch (err) {
+    pendingImport = null;
+    importStatus = 'Could not read the file: ' + err.message;
+  }
+  render();
+});
+document.addEventListener('click', async (ev) => {
+  const b = ev.target.closest('#run-import, #cancel-import');
+  if (!b) return;
+  if (b.id === 'cancel-import') {
+    pendingImport = null;
+    importStatus = '';
+    render();
+    return;
+  }
+  const rows = pendingImport.rows.filter((r) => r.mrn),
+    totals = { created: 0, skipped: 0, errors: [] };
+  importBusy = true;
+  try {
+    for (let i = 0; i < rows.length; i += 10) {
+      importStatus = `Importing… ${i} of ${rows.length}`;
+      render();
+      const r = await api('patients.import', { rows: rows.slice(i, i + 10) });
+      totals.created += r.created.length;
+      totals.skipped += r.skipped.length;
+      totals.errors.push(...r.errors.map((x) => `${x.mrn}: ${x.error}`));
+    }
+    pendingImport = null;
+    importStatus = `Imported ${totals.created} patients. ${totals.skipped ? totals.skipped + ' already existed and were skipped. ' : ''}${totals.errors.length ? 'Not imported: ' + totals.errors.join('; ') : ''}`;
+    await refreshRemote();
+  } catch (err) {
+    importStatus = `Import stopped: ${err.message} Patients imported before the stop are saved; upload the same file again to continue.`;
+  } finally {
+    importBusy = false;
+    render();
+  }
+});

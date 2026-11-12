@@ -183,6 +183,7 @@ function actions_() {
     'communications.prepare': communicationPrepare_,
     'communications.record': communicationRecord_,
     'workflow.requestReview': requestClinicalReview_,
+    'patients.import': patientsImport_,
   };
 }
 function dispatch_(payload) {
