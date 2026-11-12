@@ -1,26 +1,22 @@
 # Handoff
-**Status:** READY
-**Last agent:** Claude
+**Status:** IN PROGRESS – Codex
+**Last agent:** Codex
 **Date:** 2026-11-12
 **Last PR:** #28 (merged: yes)
-**Backend (.gs) changed:** yes — live deployment version: 14 (previous: 13, for rollback)
+**Backend (.gs) changed:** no — live deployment version: 14 (previous: 13, for rollback)
 **Live backend matches main:** yes
 
 ## What was done this turn
-Owner requests: fix "Invalid time value", remove patient login, tidy the repo, remove redundancy, speed up the site, run browser tests in CI, fix the Cloudflare preview build.
-
-- **#18 — "Invalid time value" fixed.** Google Sheets turns `yyyy-MM-dd` text into date cells and `getValues()` returns `Date` objects; the message builder appended `T12:00:00Z` to a `Date`. `allRows_` now converts date cells back to `yyyy-MM-dd` (spreadsheet time zone). This also fixes dates reaching the browser as UTC timestamps (one day early in Riyadh). `tests/helpers/sheets.mjs` now mimics Sheets date conversion; it reproduced the bug in 6 existing tests.
-- **#19 — Repository reorganized and formatted.** `app/` (frontend, published to Pages as-is), `backend/` (.gs), `tests/unit`, `tests/browser`, `tests/helpers`, `docs/screenshots`. Prettier for all code (`npm run format`; CI fails on unformatted code). `package.json` scripts. `tests/run-browser.mjs` serves `app/` and runs all browser tests; screenshots go to a temp folder unless `--update-screenshots`. **Browser tests now run in CI on every PR.** Root `index.html` forwards to `app/` (Pages also runs GitHub's branch-deploy build). README rewritten.
-- **#20 — Patient/caregiver login removed** (owner request). Portal page, `portal.*` actions, patient access management, patient request inbox and "Patient portal" contact method removed. `Patient_Access`, `Patient_Requests`, `Patient_Replies` removed from `SCHEMA`; **the existing Sheet tabs and rows were not touched**. Release `clinic-staff-care-v5`.
-- **#21 — Faster, less redundant.** Backend per-request cache (spreadsheet opened once, each tab read once per request; cleared per request and on lock; writes invalidate). After a save the app reloads only the edited patient. One `?v=__BUILD__` asset tag stamped at deploy (fixed `review-context.mjs` loading twice). Translation batched per frame. One `actions_()` table in `dispatch_`. Removed list+get fallback, `async-utils.mjs` and portal CSS.
-- **#22 — Stay signed in, faster sign-in, proper Arabic** (owner reports: slow login, refresh logged out, poor Arabic/English). Firebase refresh token kept in `sessionStorage` (survives refresh, cleared on tab close/sign-out; no patient data or ID token stored). `auth.me` with `includeWorkspace: true` returns patients in the same request: sign-in and restore = one Apps Script call. New translation layer in `ui-language.mjs` (~380 phrases, composite phrases, Arabic dates, number patterns, attributes; untranslated English gets `dir="auto"` and RTL marks around separators). New `refresh-session` and `language` browser tests; 3-minute per-test / 15-minute CI job limits.
-- **#26 — Design overhaul** (owner: "pro design, standing out, user friendly"). New design system `app/css/theme.css` (tokens, Plus Jakarta Sans / IBM Plex Sans Arabic, cards, buttons, badges, tables, forms, dialogs); all base font sizes below 12 px scaled up; compact urgent card on the dashboard and a one-line strip elsewhere; sticky top bar with refresh icon and user initials; dashboard greeting; phone bottom tab bar with short labels and bottom-sheet dialogs; passport sticky section tabs. Frontend only (no backend change). Screenshots refreshed.
-- **#28 — Button audit and simplification** (owner: "simplicity for non tech savvy users"). An automated click-through of every button on every screen found no broken buttons (the TTR < 65% chip only looked dead because it matched the High risk patients in sample data) but many duplicates. Patient page: one button per action (Enter a new INR, High-risk status, Record contact with patient, WhatsApp icon); removed header '+ New INR encounter', 'Add result', 'Review flag', 'Document follow-up', 'INR reminder'. Dashboard: 3 summary cards (was 6), 3 filter chips (was 5), Team handover card removed. Admin: removed 'Refresh staff'; 'Cancel editing' only while editing. Frontend only.
-- **#23, #27 — handoffs** plus AGENTS.md conventions (asset tag, backend cache, file-order rule, Sheets dates).
-- Tests at the end of the turn: **unit 75/75, browser 14/14**, formatting clean, GitHub `test` and `browser-test` green on every PR.
-- Backend published from `main` after each backend PR: v10 → 11 (#18), → 12 (#20), → 13 (#21), → 14 (#22); final read-only check: `Deployed source matches this release: yes`.
+- Owner asked Codex to review everything and propose improvements. Reviewed latest main `9bd582be` and Claude's last merged PR #28, plus the preceding staff-only, repository, session, design and test changes. This turn is review/documentation only; no application behavior, schema, sign-in, Worker or records were changed. Patient access remains removed and fictional records/demo mode remain available.
+- Created `docs/REVIEW_2026-11-12.md` with reproduced findings, exact code locations, prioritized product improvements and a suggested sequence of focused implementation turns.
+- Re-ran `npm test`: **75/75 passed, zero skipped**; `npm run test:browser`: **14/14 passed**; `npm run format:check`: passed. Reviewed English iPad/Arabic phone screenshots. Additional synthetic reproductions found gaps in current regression coverage; they are documented honestly, not presented as already fixed.
+- Confirmed public staff login renders without JavaScript errors or clinic navigation before authentication. Checked the current module has main's stamped asset version. Reviewed API authorization/signing/replay/history/cache logic and deployment workflows without accessing real patient data or owner credentials.
+- [Read-only deployment check](https://github.com/insaneCoro/Warfarin-Passport/actions/runs/43250402582) confirmed active backend **14** and `Deployed source matches this release: yes`. No backend publication was needed. Prior rollback version **13** is preserved.
+- Review findings are proposals, not authority to change schema, roles, sign-in, Worker/build settings or data. No setup/bootstrap/reset or actual patient messaging occurred.
 
 ## Not finished / known issues / risks
+- **New review findings (not implemented):** backdated approved entries can make the frontend show an old regimen/INR date as current and block otherwise approved messaging; completed telephone contact still leaves the dashboard awaiting a care plan; encounter notes render twice; generic INR dialogs lack name/MRN and leave keyboard focus behind the modal. See the review document for synthetic reproductions and code locations. Fix these before adding features, with regression tests. The passing baseline suite does not yet cover these cases.
+- **Review scope:** the owner requested ideas this turn. No fixes were silently shipped; do not infer permission for the report's proposed clinical/workflow policy changes.
 - **Cloudflare "Workers Builds" PR check still fails** (finishes in 0 s on every PR, also before this turn). Its settings live only in the Cloudflare dashboard; agents cannot see the logs or change them. Owner steps are in the turn summary: Workers & Pages → `warfarin-passport-api` → Settings → Build → set *Non-production branch deploy command* to `npx wrangler versions upload` (root directory `gateway`), or turn off builds for non-production branches. Production Worker deploys from `main` are unaffected. `gateway/worker.mjs` now imports `../app/js/connection-errors.mjs`.
 - **GitHub Pages runs two publishers** (the workflow and GitHub's branch build). Recommend owner sets Settings → Pages → Source = *GitHub Actions*. Until then the root `index.html` redirect keeps the site working.
 - The old patient-portal tabs remain in the Google Sheet, unused. Delete them only with owner approval.
@@ -38,11 +34,11 @@ Owner requests: fix "Invalid time value", remove patient login, tidy the repo, r
 - Never re-run `setupDatabase`/`bootstrapAdmin`, recreate the database/deployment, expose secrets, fabricate signatures, or skip/disable tests. Keep rollback version 13.
 
 ## Suggested next tasks
-- Keep one button per action. Before adding a button, check the screen has no other way to do the same thing (the owner wants simplicity for non-technical staff).
-- Style changes go in `app/css/theme.css` (design tokens at the top). `styles.css`/`care.css` are the older base; merge them into the theme over time as a refactor-only task.
-- Owner: fix the Cloudflare preview build setting and switch Pages source to GitHub Actions (steps above).
-- Split `app/js/app.js` (~1,600 lines) into view modules (dashboard, passport, staff, messages) — refactor-only PR.
-- Measure real request times in the live app (Apps Script cold starts remain ~1–3 s and cannot be removed by code).
+- Read `docs/REVIEW_2026-11-12.md` first. Prioritize consistent clinical chronology, current-plan display and phone-contact completion before further design/features. Preserve all existing records and add regression coverage. Clarify historical-entry policy with the owner if the fix requires new fields or treatment-workflow decisions.
+- Fix duplicate/amended-note display and clinical dialog identity, focus and unsaved-edit protection in focused PRs. No clinical local-storage caching.
+- Then simplify the patient page for iPad: compact identity/INR/approved dose/next test, one main next action, less repeated content and a concise reference summary. Keep design work separate from bug fixes/refactors.
+- Owner approval is required before Cloudflare/build or sign-in/session changes; Pages currently has two publishers but the live asset stamp is correct. No settings were changed this turn.
+- Keep the app staff-only and retain fictional patients/demo mode. Run formatting, all unit tests and all browser tests for any change. Claude must wait for the owner to announce its turn.
 
 ## Turn history
 | Date | Agent | PR | Summary | Backend version |
