@@ -24,11 +24,12 @@ Owner requests: fix "Invalid time value", remove patient login, tidy the repo, r
 - The old patient-portal tabs remain in the Google Sheet, unused. Delete them only with owner approval.
 - `patients.list` remains in the backend (used by tests and the session-retry test) though the app now loads with `patients.workspace`.
 - The frontend `care-messages.mjs` duplicates the backend `buildPatientMessage` for the demo preview; a unit test keeps them identical.
-- Larger simplification candidates (not done, need owner decision): the local **demo mode** (`?mode=demo`, browser storage) and the **fictional sample fixtures** (`demoSeed_`, `additional-cases.mjs`) form a second parallel code path.
+- **Owner decision (2026-11-12): keep the fictional sample patients** (`demoSeed_`, `additional-cases.mjs`, demo mode) — the owner is still trying things out. Do not remove them without asking.
 - Session persistence uses `sessionStorage` for the Firebase refresh token only (owner-approved sign-in change). Clinical data stays in memory only. Arabic translation covers interface text; clinical source guidance and fictional case text intentionally stay English. New interface text must be added to the dictionary in `app/js/ui-language.mjs` (the `language` browser test catches common gaps).
 - Everything from Codex's previous handoff about clinical validation, non-ACID Sheets writes, 200-patient cap, manual WhatsApp and synthetic data only still applies.
 
 ## Don't touch without asking
+- The fictional sample patients and demo mode (owner wants to keep them for now).
 - Database schema, Sheet tabs/columns, migrations; deleting/archiving records (including the unused portal tabs).
 - Sign-in, roles, authorization, the Cloudflare Worker/build configuration, the HMAC signing key.
 - Anything involving real patient data.
@@ -36,7 +37,6 @@ Owner requests: fix "Invalid time value", remove patient login, tidy the repo, r
 
 ## Suggested next tasks
 - Owner: fix the Cloudflare preview build setting and switch Pages source to GitHub Actions (steps above).
-- Owner decision: keep or remove demo mode and sample fixtures.
 - Split `app/js/app.js` (~1,600 lines) into view modules (dashboard, passport, staff, messages) — refactor-only PR.
 - Measure real request times in the live app (Apps Script cold starts remain ~1–3 s and cannot be removed by code).
 
