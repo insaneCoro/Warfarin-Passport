@@ -26,7 +26,7 @@ If a true **warfarin start date** is recorded, the first six weeks are excluded.
 
 An authenticated clinician may explicitly approve a saved encounter; approval records the actual staff UID/time. Admin status alone is not a clinician signature. Team messages are append-only, attributed to the approved staff identity, and can link to a patient/thread. Messages do not change a regimen or complete a follow-up. Conversations refresh on demand, not as guaranteed real-time alerts.
 
-Per the latest request, WhatsApp is a **button and setup placeholder only**. No WhatsApp URL, message generation, send, external API call or communication audit is produced yet. Arabic/English reviewed manual messaging remains a later setup task.
+WhatsApp now opens a staff-reviewed draft for manual sending. Reminder text refers to PHC laboratory testing. Care-plan text is generated only from the latest clinician-approved plan and its target snapshot; approved free-text instructions are reproduced exactly in the selected language. Opening WhatsApp neither confirms delivery nor completes follow-up. Drafts/outcomes and consent are audited. Patient INR submissions remain unverified until explicitly linked by a clinician to a matching approved encounter. See the everyday user guide and patient-access security documentation.
 
 ## Urgent review alerts
 

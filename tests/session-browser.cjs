@@ -6,7 +6,7 @@ const {chromium}=require('playwright');
   if(action==='auth.me')result={uid:'test-admin',role:'admin',displayName:'Synthetic admin',workspaceId:'',workspaceReady:true};
   else if(action==='workspace.prepare'){prepare++;result={remaining:0};}
   else if(action==='patients.list'&&failList-->0)return r.abort('failed');
-  else if(action==='patients.list'||action==='users.list'||action==='messages.list')result=action==='messages.list'?{messages:[],hasMore:false}:[];
+  else if(action==='staff.requests.list'||action==='patients.list'||action==='users.list'||action==='messages.list')result=action==='messages.list'?{messages:[],hasMore:false}:[];
   else if(action==='patients.get'){gets++;if(failRead){failRead=false;return r.abort('failed');}result={synthetic:true};}
   else if(action==='notes.create'){writes++;if(failWrite)return r.abort('failed');result={id:'synthetic-note'};}
   else throw Error('Unexpected '+action);return r.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,result})});});

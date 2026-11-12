@@ -44,20 +44,22 @@ function authorized_(identity){
    const bound=findRow_('Users','firebaseUid',identity.uid);if(bound)return bound;
    const matches=allRows_('Users').filter(r=>String(r.email).toLowerCase()===String(identity.email).toLowerCase());
    if(matches.length!==1||!String(matches[0].firebaseUid).startsWith('invite:')||String(matches[0].active).toLowerCase()!=='true')throw Error('User is not approved');
-   const invitation=matches[0],record={...invitation,firebaseUid:identity.uid,updatedAt:now_()};
+   const invitation=matches[0];PropertiesService.getScriptProperties().setProperty(staffJoinKey_(identity.uid),JSON.stringify({id:Utilities.getUuid(),uid:identity.uid,email:String(identity.email).toLowerCase(),status:'Approved',sourceInvitation:invitation.firebaseUid,authTime:Number(identity.authTime)||0,requestedAt:now_()}));const record={...invitation,firebaseUid:identity.uid,updatedAt:now_()};
    replace_('Users',record);audit_({uid:identity.uid,role:record.role},'users.invitation.accept','Users',identity.uid,JSON.stringify({invitation:invitation.firebaseUid,email:record.email}));return record;
   });
  }
  if(!u||String(u.active).toLowerCase()!=='true'||!['admin','subadmin','clinician'].includes(u.role))throw Error('User is not approved');
  if(u.email&&String(u.email).toLowerCase()!==String(identity.email||'').toLowerCase())throw Error('User email mismatch');
+ const join=PropertiesService.getScriptProperties().getProperty(staffJoinKey_(identity.uid));if(join){const request=JSON.parse(join);if(identity.emailVerified!==true||Number(request.authTime)>0&&Number(identity.authTime||0)<Number(request.authTime))throw Error('Verify your email and sign in again');}
  return {uid:u.firebaseUid,role:u.role,email:u.email,displayName:u.displayName};
 }
 function requireAdmin_(user){if(user.role!=='admin')throw Error('Admin permission required')}
-function dispatch_(payload){const user=authorized_(payload.user),a=payload.action,p=payload.params||{};
+function dispatch_(payload){if(String(payload.action).startsWith('portal.'))return portalDispatch_(payload.action,payload.params||{},payload.user);const a=payload.action,p=payload.params||{},user=a==='auth.me'?staffAdmission_(payload.user):authorized_(payload.user);if(!['admin','subadmin','clinician'].includes(user.role))return user;
  ensureSchemaForRelease_(user);
+ const extra={'staff.requests.list':staffRequestsList_,'staff.requests.review':staffRequestReview_,'patients.workspace':patientsWorkspace_,'clinic.read':()=>clinicSettingsRead_(),'clinic.save':clinicSettingsSave_,'access.list':patientAccessList_,'access.save':patientAccessSave_,'requests.list':patientRequestsList_,'requests.reply':patientRequestReply_,'requests.correct':patientRequestCorrect_,'requests.verify':patientRequestVerify_,'communications.preferences':communicationPreferences_,'communications.validate':communicationValidate_,'communications.prepare':communicationPrepare_,'communications.record':communicationRecord_,'workflow.requestReview':requestClinicalReview_};if(Object.prototype.hasOwnProperty.call(extra,a))return extra[a](p,user);
  const read=['auth.me','patients.list','patients.get','followups.list','users.list','messages.list','system.status'];
  if(!read.includes(a)&&!['patients.create','patients.update','encounters.create','followups.complete','followups.record','decisions.approve','inventory.set','notes.create','users.upsert','demo.seed','messages.create','workspace.prepare','workspace.reset'].includes(a))throw Error('Unsupported action');
- if(a==='auth.me')return {...user,backendRelease:CLINIC_RELEASE,workspaceId:workspaceState_().id,workspaceMode:workspaceState_().mode,workspaceReady:workspaceState_().mode!=='development'||!!workspaceState_().preparedRelease};
+ if(a==='auth.me')return {...user,backendRelease:CLINIC_RELEASE,workspaceId:workspaceState_().id,workspaceMode:workspaceState_().mode,batchPatients:true,workspaceReady:workspaceState_().mode!=='development'||!!workspaceState_().preparedRelease};
  if(a==='system.status')return {release:CLINIC_RELEASE,features:['team-messages','dose-review','ttr']};
  if(a==='workspace.prepare')return workspacePrepare_(p,user);
  if(a==='workspace.reset')return workspaceReset_(p,user);

@@ -5,7 +5,7 @@ const {chromium}=require('playwright');
  await p.route('https://warfarin-passport-api.m-k-altaher.workers.dev/**',async route=>{const {action,params}=route.request().postDataJSON();let result;
  if(action==='auth.me')result={uid:'test-admin',email:'admin@example.test',displayName:'Test admin',role:'admin'};
  else if(action==='patients.list')result=[];
- else if(action==='users.list')result=users;
+ else if(action==='staff.requests.list')result=[];else if(action==='users.list')result=users;
  else if(action==='users.upsert'){upserts++;if(params.password)throw Error('Unexpected password');users.push({...params});result={uid:params.uid,role:params.role};}
  else if(action==='workspace.prepare'){seedCalls++;if(seedCalls===1)return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:false,errorCode:'SERVER_BUSY',error:'Clinic is busy saving another request. Please wait a moment and retry.'})});result={created:[seedCalls===2?'DEMO-001':'DEMO-002'],skipped:[],remaining:seedCalls===2?1:0,total:2};}
  else throw Error('Unexpected action '+action);return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,result})});});
