@@ -13,7 +13,7 @@ const {chromium}=require('playwright');
   await page.route('https://warfarin-passport-api.m-k-altaher.workers.dev/**',async r=>{const {action,params}=r.request().postDataJSON();let result;
    if(action==='auth.me')result={uid:'synthetic-'+role,role,displayName:'Synthetic '+role,workspaceId:reset?'new-workspace':'',workspaceMode:reset?'empty':'development'};
    else if(action==='workspace.prepare'){prepared++;result=reset?{remaining:0,disabled:true}:{remaining:0};}
-   else if(action==='patients.list'||action==='users.list')result=[];
+   else if(action==='staff.requests.list'||action==='patients.list'||action==='users.list')result=[];
    else if(action==='workspace.reset'){if(role!=='admin'||params.confirmation!=='RESET DEVELOPMENT DATA'||!params.confirmArchive||params.expectedWorkspace!=='')throw Error('Unsafe reset request');resets++;reset=true;result={workspaceId:'new-workspace'};}
    else throw Error('Unexpected '+action);await r.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,result})});
   });

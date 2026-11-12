@@ -1,7 +1,7 @@
 import vm from 'node:vm';import fs from 'node:fs';
 export function storage(){
  const properties={DATABASE_ID:'existing-database'},grids={};let seq=0;
- const c=vm.createContext({PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties[k]||null,setProperty:(k,v)=>properties[k]=v})},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},Utilities:{getUuid:()=>`uuid-${++seq}`}});
+ const c=vm.createContext({PropertiesService:{getScriptProperties:()=>({getProperties:()=>({...properties}),getProperty:k=>properties[k]||null,setProperty:(k,v)=>properties[k]=v})},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},Utilities:{getUuid:()=>`uuid-${++seq}`}});
  for(const file of ['Database.gs','API.gs','Security.gs'])vm.runInContext(fs.readFileSync(new URL('../../'+file,import.meta.url),'utf8'),c);
  vm.runInContext('globalThis.schema=SCHEMA',c);
  for(const [name,cols]of Object.entries(c.schema))grids[name]=[Array.from(cols)];

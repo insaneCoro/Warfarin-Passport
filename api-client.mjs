@@ -13,7 +13,7 @@ export async function signIn(email,password,action='auth.me'){
  try{const user=await api(action,{});session.workspaceId=user.workspaceId;return user;}catch(err){session=null;throw Error(action==='portal.me'?'Verify your email and ask the clinic to link your account. If access was removed, contact the clinic.':connectionErrorMessage(err.connectionCode||'GATEWAY_NETWORK'));}
 }
 export function signOut(){session=null;refreshing=null;}
-const readActions=new Set(['auth.me','patients.list','patients.workspace','clinic.read','patients.get','followups.list','users.list','messages.list','system.status','portal.me','portal.passport','access.list','requests.list','communications.validate']);
+const readActions=new Set(['auth.me','staff.requests.list','patients.list','patients.workspace','clinic.read','patients.get','followups.list','users.list','messages.list','system.status','portal.me','portal.passport','access.list','requests.list','communications.validate']);
 async function renewSession(force=false){
  const current=session;if(!current)throw Error('Please sign in again; your session has ended.');
  if(!force&&current.expires>Date.now()+60000)return current;
@@ -35,11 +35,12 @@ export async function api(action,params,attempt=0,renewed=false){
  if(session!==current)throw Error('You signed out. Sign in again to continue.');
  if(r.status===401&&!renewed&&current.refreshToken){await renewSession(true);return api(action,params,attempt,true);}
  let data;try{data=await r.json();}catch{if(readActions.has(action)&&attempt<1)return api(action,params,attempt+1,renewed);const error=Error('The clinic response could not be read. Refresh the patient before retrying a save.');error.connectionCode='GATEWAY_NETWORK';throw error;}
+ if(session!==current)throw Error('You signed out. Sign in again to continue.');
  if(!r.ok||!data.ok){const error=Error(data.error||'Save failed');error.connectionCode=safeConnectionCode(data.errorCode)||backendErrorCode(data.error);
   if(error.connectionCode==='SERVER_BUSY'&&attempt<2){await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));return api(action,params,attempt+1,renewed);}
   if(readActions.has(action)&&attempt<1&&[502,503,504].includes(r.status)){await new Promise(r=>setTimeout(r,400));return api(action,params,attempt+1,renewed);}
   if(error.connectionCode==='SERVER_BUSY')error.message='Clinic is busy saving another request. Please wait a moment and retry.';throw error;
- }return data.result;
+ }if(action==='auth.me'&&data.result?.workspaceId!==undefined)current.workspaceId=data.result.workspaceId;return data.result;
 }
 export function patientFromApi(x){
  const p=x.patient;
@@ -60,3 +61,6 @@ export async function sendAccountEmail(email,password,verification=false){
  if(verification){const data=await accountRequest('signInWithPassword',{email:String(email).trim(),password,returnSecureToken:true});await accountRequest('sendOobCode',{requestType:'VERIFY_EMAIL',idToken:data.idToken});}
  else {try{await accountRequest('sendOobCode',{requestType:'PASSWORD_RESET',email:String(email).trim()});}catch{} }
 }
+
+export async function refreshAccess(){if(session?.refreshToken)await renewSession(true);return api('auth.me',{});}
+export async function resendMyVerification(){const current=await renewSession();await accountRequest('sendOobCode',{requestType:'VERIFY_EMAIL',idToken:current.token});}

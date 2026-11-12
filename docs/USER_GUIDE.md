@@ -4,7 +4,7 @@ This development release uses fictional records only. The clinic and patient pag
 
 ## Staff: the short workflow
 
-1. Sign in at the main website. **What needs doing today?** shows INR tests due, results waiting for review, patients waiting to be informed, and patient requests. Urgent clinical results appear above these tasks. Patient-reported concerning values have a separate **unverified** warning.
+1. The main website opens a standalone staff/administrator login screen. Clinic navigation appears only after sign-in; logging out clears the patient view and returns to that screen. Sign in with your approved clinic account. **What needs doing today?** shows INR tests due, results waiting for review, patients waiting to be informed, and patient requests. Urgent clinical results appear above these tasks. Patient-reported concerning values have a separate **unverified** warning.
 2. Open a patient. The **Next steps** panel shows progress. The **Current clinician-approved care plan** is separate from conditional reference suggestions and historical regimens.
 3. **Enter a new INR** opens three steps: result/safety checks, dosing decision, and instructions/next test. Nothing from a reference is automatically prescribed. Staff choose the actual daily schedule and document the reason. Daily doses must equal the weekly total.
 4. **Save draft care plan** stores the entry without a clinician signature. Staff can **Request clinician review**, which posts an attributed review request to the clinic team. Only an authenticated clinician can explicitly approve the saved plan. Administrator status alone cannot approve a clinical decision.
@@ -43,3 +43,8 @@ Large touch targets and responsive layouts support iPad, phone and Windows. The 
 Normal staff login skips completed fictional initialization. Read requests can recover from temporary connection errors and authentication tokens renew in memory. Open forms remain intact on tab return; uncertain writes are not blindly retried. If iPadOS fully discards a page, sign in again. A full page discard can also lose unsaved, in-memory form edits.
 
 New patient-reported INR values must be checked before a routine care-plan draft is sent. Concerning readings appear as unverified triage alerts; contact/verify promptly rather than waiting for a routine reminder. Patient portal submissions contain the measured value, date and PHC laboratory, not uploaded image/PDF attachments.
+
+
+## New staff who already verified their email
+
+Ask them to sign in again on the new main login page. A verified person without clinic access gets **Waiting for administrator approval**, not a patient workspace. Their request appears under **Admin & staff → Staff awaiting approval**. Confirm their identity, enter their name, choose their role and approve. They select **Check my access** to enter; no account recreation or Firebase-console work is needed. Existing administrators can also invite staff directly by email. Email verification alone never grants clinical access. Declined/disabled accounts cannot approve themselves.

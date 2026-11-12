@@ -7,7 +7,7 @@ const {chromium}=require('playwright');
   await page.route('https://identitytoolkit.googleapis.com/**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({idToken:'synthetic-mocked-token',expiresIn:3600})}));
   await page.route('https://warfarin-passport-api.m-k-altaher.workers.dev/**',async route=>{
    const {action,params}=route.request().postDataJSON();let result;
-   if(action==='users.list')result=[];
+   if(action==='staff.requests.list'||action==='users.list')result=[];
    else if(action==='auth.me')result={uid:'synthetic-admin',role,displayName:'Test staff'};
    else if(action==='patients.list')result=loaded?[1,2,3,4,5,6,7].map(n=>({id:'sample-'+n})):[];
    else if(action==='workspace.prepare'){imports++;loaded=true;result={created:['DEMO-001','DEMO-002','DEMO-003','DEMO-004'],skipped:[]};}

@@ -11,7 +11,7 @@ export async function verifyToken(token, project, fetcher=fetch){
  const jwk=keys.find(k=>k.kid===header.kid);if(!jwk)throw Error('Unauthorized');
  const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
  if(!await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,decode(parts[2]),encoder.encode(parts[0]+'.'+parts[1])))throw Error('Unauthorized');
- return {uid:claims.sub,email:claims.email||'',emailVerified:claims.email_verified===true};
+ return {uid:claims.sub,email:claims.email||'',emailVerified:claims.email_verified===true,authTime:Number(claims.auth_time)};
 }
 export default {async fetch(request,env){
  const origin=request.headers.get('Origin');
