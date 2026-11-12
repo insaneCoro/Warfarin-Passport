@@ -2,7 +2,7 @@
 
 A responsive anticoagulation clinic workspace. **Synthetic patient data only; clinical/security validation is still required.**
 
-GitHub Pages hosts the frontend. Demo mode keeps fictional records locally; staff sign-in uses Firebase → Cloudflare Worker → signed Apps Script requests → the existing Google Sheet. The modes do not upload or mix records. The public connection configuration is in `config.js`.
+GitHub Pages hosts the frontend. The main website opens staff sign-in; the explicit `?mode=demo` preview keeps fictional records locally. Staff sign-in uses Firebase → Cloudflare Worker → signed Apps Script requests → the existing Google Sheet. The modes do not upload or mix records. The public connection configuration is in `config.js`.
 
 ## Clinic workspace
 
@@ -37,3 +37,6 @@ Pages workflow publishes only explicitly allowlisted frontend assets. Backend de
 No ACID multi-sheet transactions or tamper-proof spreadsheet storage. Pending encounters/imports remain unavailable until complete; administrator reconciliation may be required after partial writes. Application append-only guards do not prevent Sheet owners from editing cells. Direct editor access, immutable audit export, backups, retention, MFA/revocation, monitoring and security/clinical acceptance remain operational work before any real-patient pilot.
 
 The requested Anticoagulation Forum PDF remains unverified; the new numeric reference is based on the retrieved UW source only. Historical target periods and treatment-interruption exclusions are not yet complete. Native iPad Safari/Windows browser and live multi-account integration acceptance remain necessary even when Chromium tests pass.
+
+
+Staff setup and the administrator-only pre-live workspace reset are documented in [Staff access](docs/STAFF_ACCESS.md). Fictional records and handovers initialize automatically on an administrator's first sign-in after this release; no sample-loading button is required. The passport displays conditional maintenance-dose reference calculations and urgent review alerts directly; [Clinical methods](docs/CLINICAL_METHODS.md) documents the limits. Reset archives development data from active views and preserves accounts, configuration and history. It does not enable clinical production use.

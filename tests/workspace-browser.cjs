@@ -2,7 +2,7 @@ const {chromium}=require('playwright');
 (async()=>{const b=await chromium.launch({...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),headless:true,args:['--no-sandbox']});try{
  for(const width of [1440,820,390]){
   const p=await b.newPage({viewport:{width,height:1000}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
-  await p.goto(process.env.TEST_URL||'http://127.0.0.1:8000/');await p.getByRole('heading',{name:'Clinic dashboard',exact:true}).waitFor();
+  await p.goto((process.env.TEST_URL||'http://127.0.0.1:8000/')+'?mode=demo');await p.getByRole('heading',{name:'Clinic dashboard',exact:true}).waitFor();
   await p.locator('#dashboard-search').fill('Sample Patient A');if(await p.locator('#dashboard-registry [data-open]').count()!==1)throw Error('Dashboard filter failed');await p.locator('#dashboard-search').fill('');
   await p.screenshot({path:`docs/dashboard-${width}.png`,fullPage:true});
   await p.locator('#dashboard-registry [data-open]').first().click();await p.getByRole('button',{name:/WhatsApp/}).click();await p.getByRole('heading',{name:'WhatsApp · setup pending'}).waitFor();await p.locator('#modal-form [type=submit]').click();

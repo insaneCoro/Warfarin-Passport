@@ -1745,7 +1745,21 @@ input[type=checkbox] {
     scroll-behavior:auto!important
   }
 }
+.risk-badge{display:table;margin-top:6px;color:#ad4257;background:#fff0f3;white-space:normal;font-size:9px;line-height:1.4}
+.patient-risk-banner{display:flex;justify-content:space-between;align-items:center;gap:15px;border:1px solid #efd0d8;border-left:4px solid #bb5064;background:#fff7f9;padding:15px 18px;border-radius:8px;margin-bottom:16px;color:#a4475a}
+.patient-risk-banner b{font-size:12px}.patient-risk-banner p{font-size:11px;margin:6px 0;line-height:1.6}.patient-risk-banner small{font-size:9px;color:#997b86}
+.risk-fields{border:1px solid #e2dce2;border-radius:7px;padding:14px}.risk-fields legend{font-size:11px;color:#98707d;padding:0 6px}.risk-fields .form-help{margin-top:12px}
+.review-summary{grid-template-columns:1fr}.management-list{padding-left:18px;margin:8px 0 12px}.management-list li{margin:7px 0;line-height:1.7}.nomogram-result h4{font-size:11px;margin:11px 0 6px}.reference-band{border-top:1px solid #adc6bc77;border-bottom:1px solid #adc6bc77;padding:7px 0;margin:12px 0}.reference-condition{font-size:10px;font-style:italic}.management-sources{font-size:10px;margin-top:12px}.attention-item small{line-height:1.6}
+@media(max-width:760px){.patient-risk-banner{align-items:flex-start;flex-direction:column}.risk-fields{padding:11px}}
 .admin-layout {display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,1fr);gap:18px;margin:18px 0;align-items:start}
 .staff-steps {font-size:11px;line-height:1.8;color:#718496;padding-left:18px;margin:0 0 5px}
 #staff-result {font-size:11px;color:#a74656;line-height:1.6;margin:0}
 @media(max-width:1020px){.admin-layout{grid-template-columns:1fr}}
+.tag.out-of-range{color:#9f1727;background:#ffe4e8;border:1px solid #f2abb5;font-weight:750}
+.whatsapp-btn{color:#118c4e;min-width:46px;min-height:46px;padding:10px}.whatsapp-btn svg{width:25px;height:25px}
+.urgent-banner{border:2px solid #b72536;border-left-width:7px;background:#fff2f3;padding:18px 22px;border-radius:12px;margin:0 0 22px;color:#721624}.urgent-banner h2{margin:0 0 8px;font-size:19px}.urgent-banner>p{margin:0 0 12px;font-size:13px;line-height:1.6}.urgent-row{display:flex;gap:15px;align-items:center;justify-content:space-between;border-top:1px solid #edc1c8;padding:12px 0}.urgent-row span{display:block;font-size:12px;line-height:1.6}.urgent-row .btn{white-space:nowrap}.reset-card{margin-top:20px}.btn.danger{background:#a82032;color:white}.reference-dose{font-size:18px;font-weight:700}.reference-band{border-left:4px solid #16867d;padding:12px 16px;background:#f0f8f5;margin:14px 0}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:600px){.urgent-banner{padding:14px}.urgent-row{align-items:flex-start;flex-direction:column}.urgent-row .btn{width:100%}.passport-header .mini-actions{flex-wrap:wrap}.reference-dose{font-size:16px}}
+#urgent-alerts{margin:24px 32px 0}#urgent-alerts:empty{display:none}@media(max-width:600px){#urgent-alerts{margin:16px 14px 0}}
+.nomogram-result.review{color:#324f62;background:#f7fafc}.nomogram-result .reference-dose{color:#11685e;font-size:17px}.nomogram-result .reference-band p{font-size:13px}.nomogram-result .reference-condition{font-size:12px}
+.clinic-refresh{margin-bottom:12px;display:flex;gap:12px;align-items:center;font-size:12px;color:#607481}
+.saved-decision{padding:14px 18px;border:1px solid #abd5c9;background:#f1faf7;border-radius:8px;margin:14px 0}.saved-decision p{font-size:12px;margin:6px 0}
