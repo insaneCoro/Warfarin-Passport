@@ -1,0 +1,658 @@
+.today-work,
+.workflow-card,
+.current-plan,
+.patient-tools {
+  margin-bottom: 22px;
+}
+.today-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px;
+}
+.today-task {
+  border: 1px solid #c8dcd8;
+  border-radius: 12px;
+  background: #f4faf8;
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  cursor: pointer;
+  min-height: 150px;
+  color: #22483f;
+}
+.today-task strong {
+  font-size: 30px;
+}
+.today-task b {
+  font-size: 15px;
+}
+.today-task small {
+  line-height: 1.6;
+}
+.today-task:hover {
+  border-color: #168477;
+  background: #e5f5ef;
+}
+.workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 16px 22px;
+  margin: 0;
+}
+.workflow-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.workflow-steps span {
+  background: #e8edf2;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-content: center;
+  font-weight: 750;
+}
+.workflow-steps .done span {
+  background: #dcf5e6;
+  color: #146644;
+}
+.current-plan {
+  border-top: 4px solid #168477;
+}
+.current-plan .pad {
+  padding: 20px;
+}
+.dose-day small {
+  display: block;
+  white-space: normal;
+}
+.message-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+  font-size: 15px !important;
+  color: #183d40;
+  max-width: 100%;
+  width: 100%;
+  font-family: inherit;
+}
+.access-row,
+.request-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #dae4e8;
+  line-height: 1.7;
+}
+.access-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+.request-item h3 {
+  margin: 0 0 10px;
+}
+.request-item p {
+  white-space: pre-wrap;
+}
+.deployment-details {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.field {
+  gap: 7px;
+}
+.field input,
+.field textarea,
+.field select {
+  min-height: 44px;
+}
+button.btn {
+  min-height: 42px;
+}
+.checkbox-line input {
+  min-width: 20px;
+  min-height: 20px;
+}
+.portal-body {
+  display: block;
+  background: #f3f7f7;
+  color: #213f47;
+}
+.portal-header {
+  max-width: 1000px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 24px;
+  gap: 12px;
+}
+.portal-header > a {
+  font-weight: 800;
+  font-size: 20px;
+  color: #126b61;
+  text-decoration: none;
+}
+.portal-main {
+  width: min(920px, calc(100% - 32px));
+  margin: 18px auto;
+}
+.portal-main h1 {
+  font-size: 30px;
+  margin-bottom: 22px;
+}
+.portal-main .card {
+  padding: 24px;
+  margin-bottom: 22px;
+}
+.portal-main .field {
+  display: flex;
+  flex-direction: column;
+  margin: 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.portal-main input,
+.portal-main select,
+.portal-main textarea {
+  font: inherit;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #b4c8ce;
+  border-radius: 8px;
+  background: white;
+  box-sizing: border-box;
+}
+.portal-main p {
+  font-size: 16px;
+  line-height: 1.9;
+}
+.portal-main .warning-box {
+  font-size: 15px;
+  line-height: 1.8;
+  margin: 18px 0;
+}
+.portal-schedule {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+.portal-schedule > div {
+  border: 1px solid #c3dbd2;
+  background: #f2faf6;
+  border-radius: 10px;
+  padding: 15px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.portal-schedule strong {
+  font-size: 21px;
+  color: #126452;
+}
+.portal-schedule small {
+  font-size: 12px;
+}
+.portal-results > div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #d6e3e5;
+  padding: 13px;
+}
+.next-test {
+  font-size: 23px;
+  color: #126452;
+}
+.portal-footer {
+  padding: 30px;
+  text-align: center;
+}
+.portal-footer a {
+  color: #326f72;
+}
+.portal-main #portal-status,
+.portal-main #request-status {
+  white-space: pre-wrap;
+  color: #8c1c2b;
+  font-weight: 600;
+}
+.portal-main .btn {
+  font-size: 15px;
+  min-height: 46px;
+}
+.portal-main .mini-actions {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.portal-main .request-item .tag {
+  margin-inline-start: 12px;
+}
+.portal-main [hidden] {
+  display: none !important;
+}
+html[dir='rtl'] .modal-header,
+html[dir='rtl'] .card-header {
+  text-align: right;
+}
+html[dir='rtl'] .portal-schedule {
+  direction: rtl;
+}
+@media (max-width: 1000px) {
+  .today-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .portal-schedule {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .workflow-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 500px) {
+  .today-actions {
+    padding: 12px;
+    gap: 10px;
+  }
+  .today-task {
+    padding: 14px;
+  }
+  .portal-header {
+    align-items: flex-start;
+    padding: 16px;
+    flex-wrap: wrap;
+  }
+  .portal-header > a {
+    font-size: 18px;
+  }
+  .portal-main .card {
+    padding: 18px;
+  }
+  .portal-schedule {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .portal-main h1 {
+    font-size: 25px;
+  }
+  .portal-main .mini-actions .btn {
+    width: 100%;
+  }
+  .workflow-steps {
+    padding: 14px;
+  }
+  .access-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+html[dir='rtl'] .nav-item {
+  text-align: right;
+}
+html[dir='rtl'] .field {
+  text-align: right;
+}
+html[dir='rtl'] .form-help {
+  line-height: 1.9;
+}
+.nomogram-result[dir='ltr'] {
+  text-align: left;
+}
+@media (max-width: 1020px) {
+  .nav-item {
+    font-size: 13px;
+    min-height: 44px;
+  }
+}
+@media (max-width: 760px) {
+  .sidebar nav .nav-item {
+    font-size: 13px;
+    min-height: 44px;
+  }
+}
+.workflow-card .pad {
+  padding: 18px 20px;
+}
+.clinical-explanation {
+  margin: 15px 0;
+}
+.clinical-explanation summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: #375b67;
+}
+.portal-trend {
+  display: block;
+  width: 100%;
+  max-height: 190px;
+  direction: ltr;
+}
+.portal-main .plan-instructions {
+  white-space: pre-wrap;
+}
+.passport-metrics strong {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.inr-step[hidden],
+.modal-actions button[hidden] {
+  display: none !important;
+}
+.inr-step {
+  grid-column: 1/-1;
+  width: 100%;
+}
+.inr-progress {
+  padding: 14px 0;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #168477;
+  font-weight: 750;
+  color: #155e56;
+}
+.wizard-status,
+#modal-save-error {
+  color: #a12334;
+  line-height: 1.7;
+}
+.reported-results {
+  background: #fff5e9;
+  border-color: #bd6926;
+  color: #783e14;
+}
+.portal-development {
+  max-width: 920px;
+  margin: 0 auto 15px;
+  padding: 12px 20px;
+  background: #fff6df;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #7c5e27;
+  text-align: center;
+}
+.communication-history {
+  margin-top: 18px;
+}
+.communication-history > summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: #21675e;
+}
+.care-patient-identity {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  background: #eef7f4;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+.care-patient-identity span {
+  direction: ltr;
+  color: #526d70;
+}
+/* The signed-out screen is a separate visual state: no workspace navigation. */
+body.auth-screen {
+  background: #edf3f3;
+}
+body.auth-screen .app-layout {
+  display: block;
+  min-height: 100vh;
+}
+body.auth-screen .sidebar,
+body.auth-screen .demo-banner,
+body.auth-screen #urgent-alerts,
+body.auth-screen .breadcrumb,
+body.auth-screen .user-pill,
+body.auth-screen #today-label,
+body.auth-screen #menu-button,
+body.auth-screen .footnote {
+  display: none !important;
+}
+body.auth-screen .main-shell {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 8% 12%, #d5eae5 0, transparent 55%);
+}
+body.auth-screen .topbar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  justify-content: flex-end;
+  max-width: none;
+  padding: 20px 32px;
+  height: auto;
+}
+body.auth-screen .screen {
+  padding: 25px 28px 65px;
+}
+.login-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 65px;
+  align-items: center;
+  max-width: 1040px;
+  margin: 35px auto;
+}
+.login-intro {
+  max-width: 420px;
+  padding: 25px 10px;
+}
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 27px;
+  font-weight: 800;
+  color: #153d47;
+  line-height: 1.15;
+  margin-bottom: 32px;
+}
+.login-logo {
+  background: #0e766c;
+  color: #fff;
+  border-radius: 15px;
+  padding: 20px 12px;
+  font-size: 30px;
+  letter-spacing: -2px;
+}
+.login-logo sup {
+  font-size: 18px;
+  vertical-align: super;
+}
+.login-intro .eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+.login-intro h2 {
+  font-size: 34px;
+  line-height: 1.25;
+  margin: 16px 0;
+  color: #193c49;
+}
+.login-intro > p:not(.eyebrow) {
+  font-size: 18px;
+  line-height: 1.8;
+  color: #58747b;
+}
+.login-assurance {
+  border-inline-start: 3px solid #24897a;
+  padding: 12px 16px;
+  margin-top: 30px;
+  color: #3f676b;
+  line-height: 1.7;
+  font-size: 13px;
+}
+.login-card {
+  padding: 36px;
+  border: 1px solid #dae5e5;
+  box-shadow: 0 14px 45px #123f4910;
+  border-radius: 18px;
+}
+.login-card h1 {
+  font-size: 25px;
+  line-height: 1.35;
+  margin: 0 0 10px;
+  color: #1e3b48;
+}
+.login-subtitle {
+  font-size: 15px;
+  color: #647a83;
+  margin: 0 0 24px;
+}
+.login-card .field {
+  margin: 17px 0;
+}
+.login-card .field input {
+  width: 100%;
+  font-size: 16px;
+  padding: 13px;
+  min-height: 48px;
+}
+.login-card .login-submit {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  font-size: 16px;
+  min-height: 49px;
+}
+.login-show-password {
+  border: 0;
+  padding: 0;
+  background: none;
+  min-height: 30px;
+  color: #246d68;
+  font-size: 12px;
+  text-decoration: underline;
+}
+.login-account-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+.login-help {
+  margin: 22px 0 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.login-help summary {
+  color: #36666c;
+  cursor: pointer;
+}
+.login-patient-link {
+  border-top: 1px solid #e0e9e8;
+  margin-top: 26px;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  color: #6a7d86;
+}
+.login-patient-link a {
+  font-weight: 650;
+}
+.login-development {
+  font-size: 11px;
+  color: #7a8483;
+  margin: 22px 0 0;
+  text-align: center;
+}
+.login-card .form-help {
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 15px;
+}
+.login-card .warning-box {
+  font-size: 13px;
+  line-height: 1.7;
+}
+@media (max-width: 850px) {
+  .login-layout {
+    gap: 30px;
+    margin: 12px auto;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+  .login-card {
+    padding: 26px;
+  }
+  .login-intro h2 {
+    font-size: 29px;
+  }
+  .login-intro > p:not(.eyebrow) {
+    font-size: 16px;
+  }
+  .login-brand {
+    font-size: 24px;
+  }
+  .login-card h1 {
+    font-size: 23px;
+  }
+}
+@media (max-width: 650px) {
+  body.auth-screen .screen {
+    padding: 8px 18px 35px;
+  }
+  body.auth-screen .topbar {
+    padding: 15px 18px;
+  }
+  .login-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    max-width: 470px;
+    margin: 0 auto;
+  }
+  .login-intro {
+    padding: 0 10px;
+    max-width: none;
+  }
+  .login-brand {
+    font-size: 23px;
+    margin: 0 0 18px;
+    justify-content: center;
+  }
+  .login-logo {
+    padding: 13px 9px;
+    font-size: 26px;
+  }
+  .login-intro h2,
+  .login-intro > p,
+  .login-assurance {
+    display: none;
+  }
+  .login-card {
+    padding: 25px 22px;
+  }
+  .login-card h1 {
+    font-size: 23px;
+  }
+  .login-account-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .login-account-actions button {
+    min-height: 44px;
+  }
+}
+
+.staff-request-form {
+  padding: 18px 0;
+  border-top: 1px solid #dbe5e6;
+}
+.staff-request-form > small {
+  display: block;
+  margin: 8px 0 14px;
+  color: #617881;
+}
+.staff-request-form .request-status {
+  color: #a12334;
+}

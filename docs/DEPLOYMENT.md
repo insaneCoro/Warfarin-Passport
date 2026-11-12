@@ -7,7 +7,7 @@ No Firebase, Cloudflare or Google project has been created or deployed as part o
 ## 1. Existing Google Apps Script and database
 
 1. Back up the existing test Sheet and current Apps Script version. Retain its existing `DATABASE_ID` Script Property. Do **not** run `setupDatabase`, change its ID or create a replacement database.
-2. Copy the root `API.gs`, `Database.gs`, `Security.gs` files into the existing Apps Script project.
+2. Copy `backend/API.gs`, `backend/Database.gs`, `backend/Security.gs` into the existing Apps Script project.
 3. Run `migrateDatabase` from the editor. It appends new columns and the `Followup_Attempts` tab without changing existing rows or columns. Unexpected headers stop migration for manual review. Run it again safely after resolving any mismatch. Confirm row counts and old history match the backup.
 4. Restrict direct Sheet editor access. Do not give ordinary staff spreadsheet editing rights. API audit events are append-only in application code, but spreadsheet owners retain the ability to alter them.
 5. Set `GATEWAY_HMAC_SECRET` in Script Properties to a locally generated, cryptographically random secret of at least 32 characters. Keep it only here and in Cloudflare secret storage.

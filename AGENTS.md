@@ -14,7 +14,7 @@ These instructions apply to Codex and Claude throughout this repository.
 
 - Fetch and branch from the latest `origin/main` for every new PR. Codex uses `codex/<task>`; Claude uses `claude/<task>`.
 - Never work on, commit to, or merge changes into the other agent's branch. Do not overwrite another agent's uncommitted files. The already merged `feature/patient-centred-workspace` branch is historical.
-- Use this workflow: branch → change → all tests pass → PR with a clear description → merge → publish backend from `main` if `.gs` changed → update `HANDOFF.md` through a PR and merge it.
+- Use this workflow: branch → change → `npm run format` → all tests pass → PR with a clear description → merge → publish backend from `main` if `.gs` changed → update `HANDOFF.md` through a PR and merge it.
 - Keep design changes, refactors and new features in separate PRs. Describe the concrete problem, resulting behavior, test evidence and material limitations. Do not bypass protected checks or conceal failing external checks.
 - Use normal reviewed GitHub PR history; do not force push `main`. The owner has authorized each agent to finish and merge its own turn, without waiting for the owner to review ordinary changes. This does not waive the approval boundaries below.
 
@@ -45,33 +45,25 @@ Staff use the root site; the separate `portal.html` serves approved patient/care
 
 Database migrations are additive and preserve historical regimens and audit events. Staff-request metadata is stored in private Script Properties; do not print those values. Connected-mode clinical data and authentication tokens must not be persisted in browser local storage. See `docs/PATIENT_ACCESS_SECURITY.md`, `docs/CLINICAL_METHODS.md` and `docs/USER_GUIDE.md`.
 
+## Repository layout
+
+`app/` frontend (published to Pages) · `backend/` Apps Script (`API.gs`, `Database.gs`, `Security.gs`) · `gateway/` Cloudflare Worker · `scripts/` deployment tooling · `tests/unit`, `tests/browser`, `tests/helpers` · `docs/` (+ `docs/screenshots/`). Keep new files in the matching folder; do not add files to the repository root.
+
+## Code style
+
+All code is formatted with Prettier (`.prettierrc.json`). Run `npm run format` before committing; CI runs `npm run format:check` and fails on unformatted code. Write readable code: no hand-minified one-line functions.
+
 ## Tests and app review
 
-Run the entire unit suite from the repository root:
-
 ```sh
-node --test tests/*.test.mjs
+npm ci                  # dev dependencies (Playwright, Prettier)
+npm test                # all unit tests
+npm run test:browser    # all browser tests; serves app/ itself, no separate server needed
 ```
 
-Run **every** browser script, including the smoke test. Use a separate terminal for a local server:
+GitHub CI runs formatting, unit and browser tests on every PR; all must pass before merging. If your environment provides Playwright/Chromium outside the checkout, set `NODE_PATH` and `CHROMIUM_PATH` instead of `npm ci`. Browser tests cover desktop, iPad and phone layouts with synthetic/mock identities and a fake Sheets backend (`tests/helpers/sheets.mjs`, which mimics Google Sheets date-cell conversion). They do not prove delivery of real Google email or WhatsApp messages.
 
-```sh
-python3 -m http.server 8010 --bind 127.0.0.1
-```
-
-With Node.js, Playwright and Chromium installed, run:
-
-```sh
-export TEST_URL=http://127.0.0.1:8010/
-export CHROMIUM_PATH=/usr/bin/chromium
-for test in tests/*-browser.cjs tests/browser-smoke.cjs; do
-  node "$test" || exit 1
-done
-```
-
-`require('playwright')` must resolve, using `NODE_PATH` if dependencies live outside the checkout. Some existing scripts explicitly use `/usr/bin/chromium`; supply that browser in a compatible Linux environment. In this managed workspace Playwright is available through `NODE_PATH=/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules`. Do not commit dependency caches or local credentials. Review desktop, iPad and phone layouts; the tests cover those sizes using synthetic/mock identities and a fake Sheets backend. They do not prove delivery of real Google email or WhatsApp messages.
-
-Browser runs overwrite review screenshots under `docs/`. Inspect relevant screenshots, then restore unrelated generated image changes before a documentation-only PR. Never restore someone else's work. Keep all browser tests passing even though the current GitHub Actions test job runs only the unit suite. Check GitHub test CI and main Pages deployment; report external Cloudflare preview failures separately and do not claim they passed.
+Screenshots are written to a temporary folder. Use `npm run test:browser -- --update-screenshots` only when you intend to refresh `docs/screenshots/`. Check GitHub test CI and the main Pages deployment; report external Cloudflare build failures separately and do not claim they passed.
 
 ## Backend publication and rollback
 

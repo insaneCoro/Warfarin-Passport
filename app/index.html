@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e2437" />
+    <meta
+      name="description"
+      content="Warfarin Passport — virtual anticoagulation clinic prototype using synthetic records."
+    />
+    <title>Warfarin Passport · Virtual Clinic</title>
+    <link rel="stylesheet" href="./css/styles.css?v=care-5" />
+    <link rel="stylesheet" href="./css/care.css?v=care-5" />
+  </head>
+  <body class="auth-screen">
+    <div id="app" class="app-layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">W<span>+</span></div>
+          <div>
+            <strong>Warfarin<br />Passport</strong><small>ANTICOAGULATION SERVICE</small>
+          </div>
+        </div>
+        <div class="sidebar-subhead">WORKSPACE</div>
+        <nav id="nav" aria-label="Primary navigation">
+          <button data-nav="dashboard" class="nav-item active">
+            <span class="nav-ico">▦</span> Dashboard
+          </button>
+          <button data-nav="patients" class="nav-item"><span class="nav-ico">♙</span> Patients</button>
+          <button data-nav="followups" class="nav-item">
+            <span class="nav-ico">◷</span> Follow-ups <span id="nav-followups" class="nav-count">0</span>
+          </button>
+          <button data-nav="messages" class="nav-item"><span class="nav-ico">✉</span> Team messages</button>
+          <button data-nav="inventory" class="nav-item"><span class="nav-ico">▤</span> Inventory</button>
+          <button data-nav="staff" class="nav-item"><span class="nav-ico">⚙</span> Staff & settings</button>
+        </nav>
+        <div class="sidebar-foot">
+          <span class="status-dot"></span> Prototype · Synthetic data only
+          <small>Not connected to a clinical database</small>
+        </div>
+      </aside>
+      <div class="main-shell">
+        <header class="topbar">
+          <button class="mobile-brand" id="menu-button" aria-label="Open navigation">☰</button>
+          <div class="breadcrumb" id="breadcrumb">Clinic / Overview</div>
+          <div class="top-actions">
+            <button class="btn sm" id="interface-language">العربية</button
+            ><span class="top-date" id="today-label"></span>
+            <div class="user-pill">
+              <div class="avatar">DE</div>
+              <div><b>Demo clinician</b><small>Unverified demo role</small></div>
+            </div>
+          </div>
+        </header>
+        <div class="demo-banner">
+          <span class="demo-pulse"></span><b>DEMO ENVIRONMENT</b
+          ><span
+            >Use fictional patient information only. Browser storage is not a secure medical record.</span
+          >
+        </div>
+        <main id="screen" class="screen" tabindex="-1"></main>
+        <footer class="footnote">
+          Warfarin Passport · Prototype v0.1 · Clinical decisions require authorized clinician review.
+        </footer>
+      </div>
+    </div>
+    <div id="dialog-root"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./js/app.js?v=care-5"></script>
+  </body>
+</html>

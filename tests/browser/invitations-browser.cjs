@@ -1,0 +1,47 @@
+const { chromium } = require('playwright');
+(async () => {
+  const b = await chromium.launch({
+    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
+    headless: true,
+    args: ['--no-sandbox'],
+  });
+  try {
+    const p = await b.newPage({ viewport: { width: 820, height: 1180 } }),
+      calls = [],
+      errors = [];
+    p.on('pageerror', (e) => errors.push(e.message));
+    await p.route('https://identitytoolkit.googleapis.com/**', async (r) => {
+      calls.push({ url: r.request().url(), body: r.request().postDataJSON() });
+      await r.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ idToken: 'synthetic-token', expiresIn: 3600 }),
+      });
+    });
+    await p.goto((process.env.TEST_URL || 'http://127.0.0.1:8001/') + '?mode=connected&view=staff');
+    await p.locator('[name=email]').fill('invited@example.test');
+    await p.locator('[name=password]').fill('short');
+    await p.getByRole('button', { name: 'Create my account', exact: true }).click();
+    await p.getByRole('alert').filter({ hasText: 'at least 12' }).waitFor();
+    if (calls.length) throw Error('Weak password was submitted');
+    await p.locator('[name=password]').fill('synthetic-long-password');
+    await p.getByRole('button', { name: 'Create my account', exact: true }).click();
+    await p.getByRole('alert').filter({ hasText: 'Verification email sent' }).waitFor();
+    if (!calls[0].url.includes('accounts:signUp') || calls[1].body.requestType !== 'VERIFY_EMAIL')
+      throw Error('Wrong onboarding requests');
+    if (await p.locator('[name=password]').inputValue()) throw Error('Password retained');
+    await p.getByRole('button', { name: 'Reset password', exact: true }).click();
+    await p.getByRole('alert').filter({ hasText: 'If the account exists' }).waitFor();
+    if (calls.at(-1).body.requestType !== 'PASSWORD_RESET') throw Error('Wrong reset request');
+    if (errors.length) throw Error(errors.join(';'));
+    if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth))
+      throw Error('iPad overflow');
+    console.log(
+      'iPad account creation, email verification, password reset and password clearing passed with synthetic mocks',
+    );
+  } finally {
+    await b.close();
+  }
+})().catch((e) => {
+  console.error(e);
+  process.exitCode = 1;
+});

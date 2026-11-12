@@ -1,0 +1,16 @@
+{
+  "name": "warfarin-passport",
+  "private": true,
+  "description": "Anticoagulation clinic workspace (GitHub Pages frontend, Cloudflare Worker gateway, Google Apps Script backend).",
+  "scripts": {
+    "test": "node --test 'tests/unit/*.test.mjs'",
+    "test:browser": "node tests/run-browser.mjs",
+    "serve": "python3 -m http.server 8000 --directory app",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "prettier": "3.10.1"
+  }
+}
