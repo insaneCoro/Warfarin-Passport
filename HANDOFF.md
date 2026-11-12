@@ -1,5 +1,5 @@
 # Handoff
-**Status:** READY
+**Status:** IN PROGRESS – Claude
 **Last agent:** Codex
 **Date:** 2026-11-12
 **Last PR:** #29 (merged: yes)
