@@ -22,7 +22,7 @@ export function mergeSource(remoteFiles,sources){
  for(const [name,source]of Object.entries(sources))files.push({name,type:'SERVER_JS',source});
  return files;
 }
-export async function deployExisting({scriptId,deploymentId,credential,sources,description,publish=false,rollbackVersion=null,backup,fetcher=fetch}){
+export async function deployExisting({scriptId,deploymentId,credential,sources,description,publish=false,rollbackVersion=null,backup,fetcher=fetch,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
  if(!/^[\w-]{10,200}$/.test(scriptId||'')||!/^AKfy[\w-]{10,200}$/.test(deploymentId||''))throw Error('Set APPS_SCRIPT_ID and the existing APPS_SCRIPT_DEPLOYMENT_ID in repository Actions variables. They are different IDs.');
  const auth=await fetcher('https://oauth2.googleapis.com/token',{method:'POST',body:new URLSearchParams({...credential,grant_type:'refresh_token'})});
  if(!auth.ok)throw Error('Google deployment authentication failed. Renew the private clasp credential.');
@@ -35,28 +35,43 @@ export async function deployExisting({scriptId,deploymentId,credential,sources,d
  }
  const deployment=await api('/deployments/'+encodeURIComponent(deploymentId));
  if(deployment.deploymentConfig?.scriptId!==scriptId)throw Error('Deployment does not belong to the selected existing project.');
- const previousVersion=deployment.deploymentConfig.versionNumber;
+ const previousVersion=Number(deployment.deploymentConfig.versionNumber);
+ if(!Number.isInteger(previousVersion)||previousVersion<1)throw Error('The existing deployment has no valid version number.');
+ async function verifyVersion(expected){
+  for(let attempt=0;attempt<5;attempt++){
+   const observed=await api('/deployments/'+deploymentId);
+   if(Number(observed.deploymentConfig?.versionNumber)===expected)return;
+   if(attempt<4)await wait(1000*2**attempt);
+  }
+  throw Error(`Publication requested version ${expected}, but verification has not converged. Check the existing deployment before retrying; do not blindly create another version.`);
+ }
  if(rollbackVersion!==null){
   if(!publish||!Number.isInteger(rollbackVersion)||rollbackVersion<1)throw Error('Rollback needs --deploy and a positive existing version number.');
   await api('/versions/'+rollbackVersion);
   await api('/deployments/'+deploymentId,'PUT',{deploymentConfig:{...deployment.deploymentConfig,versionNumber:rollbackVersion,description:description||'Rollback existing deployment'}});
+  await verifyVersion(rollbackVersion);
   return {published:true,previousVersion,version:rollbackVersion,rollback:true};
  }
  const remote=await api('/content'),files=mergeSource(remote.files||[],sources);
  if(backup)await backup({files:remote.files,deployment});
- if(!publish)return {published:false,previousVersion,fileCount:files.length};
+ if(!publish){
+  const active=await api('/content?versionNumber='+previousVersion);
+  const sourceMatchesActive=Object.entries(sources).every(([name,source])=>active.files?.some(file=>file.name===name&&file.type==='SERVER_JS'&&file.source===source));
+  return {published:false,previousVersion,fileCount:files.length,sourceMatchesActive};
+ }
  await api('/content','PUT',{files});
  const version=await api('/versions','POST',{description:description||'Warfarin Passport release'});
- await api('/deployments/'+deploymentId,'PUT',{deploymentConfig:{...deployment.deploymentConfig,versionNumber:version.versionNumber,description:description||'Warfarin Passport release'}});
- const verified=await api('/deployments/'+deploymentId);
- if(verified.deploymentConfig.versionNumber!==version.versionNumber)throw Error('Deployment version could not be verified. Check Apps Script deployment status before retrying.');
- return {published:true,previousVersion,version:version.versionNumber,fileCount:files.length};
+ const versionNumber=Number(version.versionNumber);
+ if(!Number.isInteger(versionNumber)||versionNumber<1)throw Error('Google did not return a valid new version number. Active deployment has not been updated.');
+ await api('/deployments/'+deploymentId,'PUT',{deploymentConfig:{...deployment.deploymentConfig,versionNumber,description:description||'Warfarin Passport release'}});
+ await verifyVersion(versionNumber);
+ return {published:true,previousVersion,version:versionNumber,fileCount:files.length};
 }
 async function main(){
  let config;try{config=JSON.parse(process.env.CLASPRC_JSON||'');}catch{throw Error('Add CLASPRC_JSON as a private repository Actions secret.');}
  const sources=Object.fromEntries(await Promise.all(['API','Database','Security'].map(async name=>[name,await readFile(new URL('../'+name+'.gs',import.meta.url),'utf8')])));
  const rollback=process.argv.find(a=>a.startsWith('--rollback-version='));
  const result=await deployExisting({scriptId:process.env.APPS_SCRIPT_ID,deploymentId:process.env.APPS_SCRIPT_DEPLOYMENT_ID,credential:credentialsFromClasp(config),sources,description:'Warfarin Passport '+(process.env.GITHUB_SHA||'local').slice(0,12),publish:process.argv.includes('--deploy'),rollbackVersion:rollback?Number(rollback.split('=')[1]):null,backup:async data=>{const dir=await mkdtemp(path.join(tmpdir(),'warfarin-code-backup-'));await writeFile(path.join(dir,'existing-project.json'),JSON.stringify(data),{mode:0o600});}});
- console.log(result.published?`Existing deployment updated: version ${result.previousVersion} → ${result.version}. Existing URL, Script Properties and database retained.`:`Read-only preflight passed (${result.fileCount} files). Add --deploy to publish; current deployment version ${result.previousVersion} is unchanged.`);
+ console.log(result.published?`Existing deployment updated: version ${result.previousVersion} → ${result.version}. Existing URL, Script Properties and database retained.`:`Read-only preflight passed (${result.fileCount} files). Add --deploy to publish; current deployment version ${result.previousVersion} is unchanged. Deployed source matches this release: ${result.sourceMatchesActive?'yes':'no'}.`);
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(error=>{console.error(error.message);process.exitCode=1});
