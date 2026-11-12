@@ -58,7 +58,7 @@ function dispatch_(payload){if(String(payload.action).startsWith('portal.'))retu
  const extra={'access.list':patientAccessList_,'access.save':patientAccessSave_,'requests.list':patientRequestsList_,'requests.reply':patientRequestReply_,'requests.verify':patientRequestVerify_,'communications.preferences':communicationPreferences_,'communications.prepare':communicationPrepare_,'communications.record':communicationRecord_,'workflow.requestReview':requestClinicalReview_};if(Object.prototype.hasOwnProperty.call(extra,a))return extra[a](p,user);
  const read=['auth.me','patients.list','patients.get','followups.list','users.list','messages.list','system.status'];
  if(!read.includes(a)&&!['patients.create','patients.update','encounters.create','followups.complete','followups.record','decisions.approve','inventory.set','notes.create','users.upsert','demo.seed','messages.create','workspace.prepare','workspace.reset'].includes(a))throw Error('Unsupported action');
- if(a==='auth.me')return {...user,backendRelease:CLINIC_RELEASE,workspaceId:workspaceState_().id,workspaceMode:workspaceState_().mode};
+ if(a==='auth.me')return {...user,backendRelease:CLINIC_RELEASE,workspaceId:workspaceState_().id,workspaceMode:workspaceState_().mode,workspaceReady:workspaceState_().mode!=='development'||!!workspaceState_().preparedRelease};
  if(a==='system.status')return {release:CLINIC_RELEASE,features:['team-messages','dose-review','ttr']};
  if(a==='workspace.prepare')return workspacePrepare_(p,user);
  if(a==='workspace.reset')return workspaceReset_(p,user);
