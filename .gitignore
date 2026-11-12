@@ -3,3 +3,7 @@ node_modules/
 .wrangler/
 .env*
 *.log
+.clasp.json
+.clasprc.json
+.clasp-credentials*
+private-backups/
