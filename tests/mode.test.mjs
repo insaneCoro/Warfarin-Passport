@@ -1,2 +1,0 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {usesConnectedApi} from '../mode-utils.mjs';
-test('configured website opens shared staff sign-in; explicit preview stays isolated',()=>{assert.equal(usesConnectedApi(true),true);assert.equal(usesConnectedApi(true,'?mode=demo'),false);assert.equal(usesConnectedApi(true,'?mode=connected'),true);assert.equal(usesConnectedApi(false,'?mode=connected'),false);});

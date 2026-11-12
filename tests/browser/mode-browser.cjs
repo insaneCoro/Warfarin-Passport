@@ -1,0 +1,38 @@
+const { chromium } = require('playwright');
+(async () => {
+  const b = await chromium.launch({
+    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
+    headless: true,
+    args: ['--no-sandbox'],
+  });
+  try {
+    for (const width of [820, 1366]) {
+      const p = await b.newPage({ viewport: { width, height: 1000 } });
+      let apiCalls = 0;
+      const errors = [];
+      p.on('pageerror', (e) => errors.push(e.message));
+      p.on('request', (r) => {
+        if (/workers.dev|identitytoolkit/.test(r.url())) apiCalls++;
+      });
+      await p.goto((process.env.TEST_URL || 'http://127.0.0.1:8000/') + '?mode=demo');
+      await p.getByText('Enrolled patients', { exact: true }).waitFor();
+      await p.getByRole('link', { name: 'Staff sign-in', exact: true }).click();
+      await p.getByRole('button', { name: 'Sign in', exact: true }).waitFor();
+      if (await p.locator('#reset-demo').count()) throw Error('Reset exposed in connected mode');
+      if (await p.getByRole('link', { name: 'Open demo patients', exact: true }).count())
+        throw Error('Removed demo button remains');
+      await p.goto((process.env.TEST_URL || 'http://127.0.0.1:8000/') + '?mode=demo');
+      await p.getByText('Enrolled patients', { exact: true }).waitFor();
+      await p.locator('[data-nav=patients]').click();
+      if ((await p.locator('#screen [data-open]').count()) !== 7) throw Error('Missing demo patients');
+      if (apiCalls || errors.length) throw Error(JSON.stringify({ apiCalls, errors }));
+      console.log(width + ': demo/staff switching, preserved demo patients, no API calls or JS errors');
+      await p.close();
+    }
+  } finally {
+    await b.close();
+  }
+})().catch((e) => {
+  console.error(e);
+  process.exitCode = 1;
+});
