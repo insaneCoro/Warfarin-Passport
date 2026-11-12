@@ -1,4 +1,6 @@
-# Manual setup: synthetic integration environment
+# Existing service setup: synthetic integration environment
+
+For ongoing backend updates, use [the one-time automated deployment setup](AUTOMATED_DEPLOYMENT.md). The manual copying steps below are retained as a legacy fallback, not required after automation is authorized.
 
 No Firebase, Cloudflare or Google project has been created or deployed as part of these code changes. Do not enter secrets in chat, source files or commits.
 
