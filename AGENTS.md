@@ -51,7 +51,7 @@ Database migrations are additive and preserve historical regimens and audit even
 
 ## Code style
 
-All code is formatted with Prettier (`.prettierrc.json`). Run `npm run format` before committing; CI runs `npm run format:check` and fails on unformatted code. Write readable code: no hand-minified one-line functions.
+Visual styling lives in `app/css/theme.css` (design tokens at the top); prefer its tokens over new hard-coded colours or sizes, and keep text at 12px or larger. All code is formatted with Prettier (`.prettierrc.json`). Run `npm run format` before committing; CI runs `npm run format:check` and fails on unformatted code. Write readable code: no hand-minified one-line functions.
 
 Frontend imports and asset links always use `?v=__BUILD__` (e.g. `import { x } from './date-utils.mjs?v=__BUILD__'`). The Pages workflow replaces it with the commit id, so every deploy refreshes browser caches. Never hand-write version tags: two different tags on one file make the browser load it twice.
 
