@@ -52,7 +52,7 @@ function cell_(x){if(x===null||x===undefined)return '';if(typeof x==='string' &&
 function append_(name,obj){const sh=tab_(name);const values=SCHEMA[name].map(k=>cell_(obj[k]));sh.appendRow(values);return obj}
 function replace_(name,record){if(['Audit_Log','Dose_Plans','INR_Results','Clinical_Notes','Followup_Attempts'].includes(name))throw Error('Append-only record');const row=Number(record.__row);if(!(row>=2))throw Error('Missing row reference');tab_(name).getRange(row,1,1,SCHEMA[name].length).setValues([SCHEMA[name].map(k=>cell_(record[k]))]);return record}
 function findRow_(name,key,value){return allRows_(name).find(o=>String(o[key])===String(value))}
-function requirePatient_(id){const p=findRow_('Patients','id',id);if(!p||p.status==='Archived')throw new Error('Patient not found');return p}
+function requirePatient_(id){const p=findRow_('Patients','id',id);if(!p||p.status==='Archived'||p.status==='Importing')throw new Error('Patient not found');return p}
 function audit_(user,action,kind,id,detail){append_('Audit_Log',{id:Utilities.getUuid(),timestamp:now_(),actorUid:user.uid,action,recordType:kind,recordId:id,detail:JSON.stringify({actor:{uid:user.uid,email:user.email||'',role:user.role||''},data:detail||null})})}
 function plusCalendarDays_(iso,days){requireDate_(iso);const date=new Date(iso+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+days);return Utilities.formatDate(date,'UTC','yyyy-MM-dd')}
 function requireDate_(iso){if(typeof iso!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(iso)||new Date(iso+'T12:00:00Z').toISOString().slice(0,10)!==iso)throw new Error('Invalid ISO calendar date');return iso}
