@@ -40,3 +40,6 @@ The requested Anticoagulation Forum PDF remains unverified; the new numeric refe
 
 
 Staff setup and the administrator-only pre-live workspace reset are documented in [Staff access](docs/STAFF_ACCESS.md). Fictional records and handovers initialize automatically on an administrator's first sign-in after this release; no sample-loading button is required. The passport displays conditional maintenance-dose reference calculations and urgent review alerts directly; [Clinical methods](docs/CLINICAL_METHODS.md) documents the limits. Reset archives development data from active views and preserves accounts, configuration and history. It does not enable clinical production use.
+
+
+The task-based staff workflow, reviewed English/Arabic patient messages and separately authorized patient/caregiver portal are described in [Everyday user guide](docs/USER_GUIDE.md). See [Patient-access security](docs/PATIENT_ACCESS_SECURITY.md) for endpoint isolation, consent, approval and reset behavior. Patient sign-in is at `portal.html`; staff must approve an email-to-patient link before access is possible. Patient-submitted INR values require clinical verification and never change a dose automatically.

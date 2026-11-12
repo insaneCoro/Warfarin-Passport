@@ -10,11 +10,12 @@ const SCHEMA = {
   Inventory_Log:['id','patientId','strengthMg','oldQuantity','newQuantity','confirmedDate','actorUid','createdAt'],
   Clinical_Notes:['id','patientId','encounterId','noteDate','text','createdAt','createdBy','supersedes'],
   Team_Messages:['id','requestId','threadId','replyTo','patientId','body','createdAt','createdBy','authorName','authorRole','workspaceId'],
-  Patient_Access:['id', 'patientId', 'email', 'displayName', 'kind', 'firebaseUid', 'active', 'consentAt', 'consentBy', 'createdAt', 'updatedAt', 'updatedBy', 'workspaceId'],
-  Patient_Requests:['id', 'requestId', 'patientId', 'kind', 'details', 'inr', 'testDate', 'lab', 'requestedDate', 'status', 'createdAt', 'createdBy', 'createdRole', 'verifiedBy', 'verifiedAt', 'encounterId', 'workspaceId'],
-  Patient_Replies:['id', 'requestId', 'requestKey', 'patientId', 'body', 'authorName', 'createdBy', 'createdAt', 'workspaceId'],
-  Message_Drafts:['id', 'patientId', 'kind', 'language', 'body', 'planId', 'approvalId', 'phone', 'canWhatsApp', 'createdBy', 'createdAt', 'expiresAt', 'workspaceId'],
-  Communications:['id', 'draftId', 'patientId', 'kind', 'language', 'body', 'planId', 'outcome', 'note', 'createdBy', 'createdAt', 'workspaceId'],
+  Patient_Access:['id','patientId','email','displayName','kind','firebaseUid','active','consentAt','consentBy','createdAt','updatedAt','updatedBy','workspaceId','acceptedAt'],
+  Patient_Requests:['id','requestId','patientId','kind','details','inr','testDate','lab','requestedDate','status','createdAt','createdBy','createdRole','verifiedBy','verifiedAt','encounterId','workspaceId'],
+  Patient_Replies:['id','requestId','requestKey','patientId','body','authorName','createdBy','createdAt','workspaceId'],
+  Message_Drafts:['id','patientId','kind','language','body','planId','approvalId','phone','canWhatsApp','createdBy','createdAt','expiresAt','workspaceId'],
+  Communications:['id','draftId','patientId','kind','language','body','planId','outcome','note','createdBy','createdAt','workspaceId','recipient','staleAtRecording'],
+  Clinic_Settings:['key','value','updatedAt','updatedBy'],
   Users:['firebaseUid','email','role','active','displayName','createdAt','updatedAt'],
   Audit_Log:['id','timestamp','actorUid','action','recordType','recordId','detail']
 };
@@ -59,7 +60,7 @@ function append_(name,obj){if(['Patients','Team_Messages','Patient_Access','Pati
 function replace_(name,record){if(['Audit_Log','Dose_Plans','INR_Results','Clinical_Notes','Followup_Attempts','Team_Messages','Patient_Replies','Message_Drafts','Communications'].includes(name))throw Error('Append-only record');const row=Number(record.__row);if(!(row>=2))throw Error('Missing row reference');tab_(name).getRange(row,1,1,SCHEMA[name].length).setValues([SCHEMA[name].map(k=>cell_(record[k]))]);return record}
 function findRow_(name,key,value){return allRows_(name).find(o=>String(o[key])===String(value))}
 function requirePatient_(id){const p=findRow_('Patients','id',id);if(!p||p.status==='Archived'||p.status==='Importing')throw new Error('Patient not found');return p}
-function audit_(user,action,kind,id,detail){append_('Audit_Log',{id:Utilities.getUuid(),timestamp:now_(),actorUid:user.uid,action,recordType:kind,recordId:id,detail:JSON.stringify({actor:{uid:user.uid,email:user.email||'',role:user.role||''},data:detail||null})})}
+function audit_(user,action,kind,id,detail){append_('Audit_Log',{id:Utilities.getUuid(),timestamp:now_(),actorUid:user.uid,action,recordType:kind,recordId:id,detail:JSON.stringify({actor:{uid:user.uid,email:user.email||'',role:user.role||'',displayName:user.displayName||''},data:detail||null})})}
 function plusCalendarDays_(iso,days){requireDate_(iso);const date=new Date(iso+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+days);return Utilities.formatDate(date,'UTC','yyyy-MM-dd')}
 function requireDate_(iso){if(typeof iso!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(iso)||new Date(iso+'T12:00:00Z').toISOString().slice(0,10)!==iso)throw new Error('Invalid ISO calendar date');return iso}
 function clean_(str,max){return String(str??'').trim().slice(0,max||1000)}

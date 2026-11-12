@@ -7,6 +7,7 @@
   <meta name="description" content="Warfarin Passport — virtual anticoagulation clinic prototype using synthetic records." />
   <title>Warfarin Passport · Virtual Clinic</title>
   <link rel="stylesheet" href="./styles.css?v=care-5" />
+  <link rel="stylesheet" href="./care.css?v=care-5" />
 </head>
 <body>
   <div id="app" class="app-layout">
@@ -24,7 +25,7 @@
       <div class="sidebar-foot"><span class="status-dot"></span> Prototype · Synthetic data only <small>Not connected to a clinical database</small></div>
     </aside>
     <div class="main-shell">
-      <header class="topbar"><button class="mobile-brand" id="menu-button" aria-label="Open navigation">☰</button><div class="breadcrumb" id="breadcrumb">Clinic / Overview</div><div class="top-actions"><span class="top-date" id="today-label"></span><div class="user-pill"><div class="avatar">DE</div><div><b>Demo clinician</b><small>Unverified demo role</small></div></div></div></header>
+      <header class="topbar"><button class="mobile-brand" id="menu-button" aria-label="Open navigation">☰</button><div class="breadcrumb" id="breadcrumb">Clinic / Overview</div><div class="top-actions"><button class="btn sm" id="interface-language">العربية</button><span class="top-date" id="today-label"></span><div class="user-pill"><div class="avatar">DE</div><div><b>Demo clinician</b><small>Unverified demo role</small></div></div></div></header>
       <div class="demo-banner"><span class="demo-pulse"></span><b>DEMO ENVIRONMENT</b><span>Use fictional patient information only. Browser storage is not a secure medical record.</span></div>
       <main id="screen" class="screen" tabindex="-1"></main>
       <footer class="footnote">Warfarin Passport · Prototype v0.1 · Clinical decisions require authorized clinician review.</footer>
