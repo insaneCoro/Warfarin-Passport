@@ -193,7 +193,7 @@ function additionalDemoProfiles_(){return [
 
 function workspacePrepare_(p,user){
  requireAdmin_(user);const state=workspaceState_();
- if(state.mode!=='development'||state.preparedRelease===CLINIC_RELEASE)return {remaining:0,disabled:state.mode!=='development'};
+ if(state.mode!=='development'||!!state.preparedRelease)return {remaining:0,disabled:state.mode!=='development'};
  const result=demoSeed_({...p,confirmSynthetic:true},user);
  if(!result.remaining)withLock_(()=>{assertWorkspace_(p);const current=workspaceState_();if(current.mode!=='development')return;
   const samples=[{id:'fixture-team-review',patientId:allRows_('Patients').find(p=>p.mrn==='DEMO-007')?.id||'',body:'FICTIONAL HANDOVER: elevated INR in Sample Patient G. Please open the passport and document clinician review. This message is a development example, not a completed escalation.'},{id:'fixture-team-welcome',patientId:'',body:'FICTIONAL DEVELOPMENT WORKSPACE: seven varied patients include stable, labile, bleeding-risk and mechanical-valve cases. Clinical decisions and approvals must be documented separately.'}];
