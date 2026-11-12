@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
 }
 .workflow-steps span {
@@ -98,7 +98,7 @@
 }
 .deployment-details {
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 14.5px;
 }
 .field {
   gap: 7px;
@@ -157,13 +157,13 @@ html[dir='rtl'] .form-help {
 }
 @media (max-width: 1020px) {
   .nav-item {
-    font-size: 13px;
+    font-size: 15px;
     min-height: 44px;
   }
 }
 @media (max-width: 760px) {
   .sidebar nav .nav-item {
-    font-size: 13px;
+    font-size: 15px;
     min-height: 44px;
   }
 }
@@ -292,7 +292,7 @@ body.auth-screen .screen {
   vertical-align: super;
 }
 .login-intro .eyebrow {
-  font-size: 11px;
+  font-size: 13.5px;
   letter-spacing: 2px;
 }
 .login-intro h2 {
@@ -312,7 +312,7 @@ body.auth-screen .screen {
   margin-top: 30px;
   color: #3f676b;
   line-height: 1.7;
-  font-size: 13px;
+  font-size: 15px;
 }
 .login-card {
   padding: 36px;
@@ -353,7 +353,7 @@ body.auth-screen .screen {
   background: none;
   min-height: 30px;
   color: #246d68;
-  font-size: 12px;
+  font-size: 14.5px;
   text-decoration: underline;
 }
 .login-account-actions {
@@ -365,7 +365,7 @@ body.auth-screen .screen {
 }
 .login-help {
   margin: 22px 0 0;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.8;
 }
 .login-help summary {
@@ -373,18 +373,18 @@ body.auth-screen .screen {
   cursor: pointer;
 }
 .login-development {
-  font-size: 11px;
+  font-size: 13.5px;
   color: #7a8483;
   margin: 22px 0 0;
   text-align: center;
 }
 .login-card .form-help {
-  font-size: 12px;
+  font-size: 14.5px;
   line-height: 1.7;
   margin-top: 15px;
 }
 .login-card .warning-box {
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.7;
 }
 @media (max-width: 850px) {
