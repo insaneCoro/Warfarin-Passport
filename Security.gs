@@ -18,7 +18,12 @@ function doPost(e){
     const expected=Utilities.computeHmacSha256Signature(signable,secret).map(v=>('0'+((v+256)%256).toString(16)).slice(-2)).join('');
     if(!constantTimeEqual_(sig,expected))throw Error('Unauthorized request');
     const cache=CacheService.getScriptCache(),nonceKey='nonce-'+nonce;
-    withLock_(()=>{if(cache.get(nonceKey))throw Error('Duplicate request');cache.put(nonceKey,'1',300);});
+    // Execute-as-owner requests share this short user lock. It is separate from
+    // the long-running database script lock, so reads are not blocked by imports.
+    const nonceLock=LockService.getUserLock();let acquired=false;
+    try{acquired=nonceLock.tryLock(3000);}catch{throw busyError_();}
+    if(!acquired)throw busyError_();
+    try{if(cache.get(nonceKey))throw Error('Duplicate request');cache.put(nonceKey,'1',300);}finally{nonceLock.releaseLock();}
     const raw=Utilities.newBlob(Utilities.base64DecodeWebSafe(bodyB64)).getDataAsString('UTF-8');
     const payload=JSON.parse(raw);
     if(!payload||typeof payload.action!=='string'||!payload.user?.uid)throw Error('Invalid request');
@@ -26,7 +31,7 @@ function doPost(e){
     output={ok:true,result};
   }catch(err){
     // Never include request payloads, signatures, or PHI in logs.
-    output={ok:false,error:String(err.message||'Request rejected').slice(0,160)};
+    output={ok:false,error:String(err.message||'Request rejected').slice(0,160),...(err.code==='SERVER_BUSY'?{errorCode:'SERVER_BUSY'}:{})};
   }
   return ContentService.createTextOutput(JSON.stringify(output)).setMimeType(ContentService.MimeType.JSON);
 }

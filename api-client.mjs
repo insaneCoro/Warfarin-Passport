@@ -1,4 +1,4 @@
-import {backendErrorCode, connectionErrorMessage, safeConnectionCode} from './connection-errors.mjs';
+import {backendErrorCode, connectionErrorMessage, safeConnectionCode} from './connection-errors.mjs?v=admin-workflow-2';
 import {firebaseSignInError} from './auth-errors.mjs';
 import config from './config.js?v=demo-and-staff-3';
 import {usesConnectedApi} from './mode-utils.mjs';
@@ -13,10 +13,10 @@ export async function signIn(email,password){
  try{return await api('auth.me',{});}catch(err){session=null;throw Error(connectionErrorMessage(err.connectionCode||'GATEWAY_NETWORK'));}
 }
 export function signOut(){session=null;}
-export async function api(action,params){
+export async function api(action,params,attempt=0){
  if(!session||session.expires<=Date.now()){session=null;throw Error('Sign in again; session expired');}
  const r=await fetch(config.gatewayUrl,{method:'POST',headers:{Authorization:`Bearer ${session.token}`,'Content-Type':'application/json'},body:JSON.stringify({action,params}),cache:'no-store'});
- let data;try{data=await r.json();}catch{const error=Error('Invalid API response');error.connectionCode='GATEWAY_NETWORK';throw error;}if(!r.ok||!data.ok){const error=Error(data.error||'Save failed');error.connectionCode=safeConnectionCode(data.errorCode)||backendErrorCode(data.error);throw error;}return data.result;
+ let data;try{data=await r.json();}catch{const error=Error('Invalid API response');error.connectionCode='GATEWAY_NETWORK';throw error;}if(!r.ok||!data.ok){const error=Error(data.error||'Save failed');error.connectionCode=safeConnectionCode(data.errorCode)||backendErrorCode(data.error);if(error.connectionCode==='SERVER_BUSY'&&attempt<2){await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));return api(action,params,attempt+1);}if(error.connectionCode==='SERVER_BUSY')error.message='Clinic is busy saving another request. Please wait a moment and retry.';throw error;}return data.result;
 }
 export function patientFromApi(x){
  const p=x.patient;
