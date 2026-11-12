@@ -1,16 +1,16 @@
-import {backendErrorCode, connectionErrorMessage, safeConnectionCode} from './connection-errors.mjs?v=management-4';
+import {backendErrorCode, connectionErrorMessage, safeConnectionCode} from './connection-errors.mjs?v=care-5';
 import {firebaseSignInError} from './auth-errors.mjs';
 import config from './config.js?v=demo-and-staff-3';
-import {usesConnectedApi} from './mode-utils.mjs?v=management-4';
+import {usesConnectedApi} from './mode-utils.mjs?v=care-5';
 let session=null;
 export const connectionAvailable=config.enabled;
 export const connected=usesConnectedApi(config.enabled,globalThis.location?.search||'');
-export async function signIn(email,password){
+export async function signIn(email,password,action='auth.me'){
  if(!connected||!config.gatewayUrl.startsWith('https://'))throw Error('Connection not configured');
  const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(config.firebaseApiKey)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(email||'').trim(),password,returnSecureToken:true})});
  const data=await r.json();if(!r.ok)throw Error(firebaseSignInError(data.error?.message));
  session={token:data.idToken,expires:Date.now()+Number(data.expiresIn)*1000};
- try{const user=await api('auth.me',{});session.workspaceId=user.workspaceId;return user;}catch(err){session=null;throw Error(connectionErrorMessage(err.connectionCode||'GATEWAY_NETWORK'));}
+ try{const user=await api(action,{});session.workspaceId=user.workspaceId;return user;}catch(err){session=null;throw Error(action==='portal.me'?'Verify your email and ask the clinic to link your account. If access was removed, contact the clinic.':connectionErrorMessage(err.connectionCode||'GATEWAY_NETWORK'));}
 }
 export function signOut(){session=null;}
 export async function api(action,params,attempt=0){
@@ -20,7 +20,7 @@ export async function api(action,params,attempt=0){
 }
 export function patientFromApi(x){
  const p=x.patient;
- return {...p,results:x.results.map(r=>({id:r.id,date:r.testDate,value:r.inr,encounterId:r.encounterId,enteredAt:r.enteredAt,enteredBy:r.enteredBy,targetLow:r.targetLow,targetHigh:r.targetHigh})),dosePlans:x.dosePlans.map(d=>{const approval=x.approvals?.find(a=>a.recordId===d.encounterId);return {...d,date:d.effectiveDate,daily:['sun','mon','tue','wed','thu','fri','sat'].map(k=>Number(d[k])),previousDaily:d.previousDaily?JSON.parse(d.previousDaily):null,previousWeekly:d.previousWeeklyMg===''?null:d.previousWeeklyMg,weekly:d.weeklyMg,percentChange:d.percentChange===''?null:d.percentChange,enteredBy:d.createdBy,enteredAt:d.createdAt,approvedBy:approval?.actorUid,approvedAt:approval?.timestamp};}),encounters:x.encounters.map(e=>({...e,date:e.testDate,enteredBy:e.createdBy})),notes:x.notes.map(n=>({...n,date:n.noteDate,by:n.createdBy})),inventory:x.inventory.map(i=>({...i,strength:i.strengthMg,date:i.confirmedDate})),followups:x.followups.map(f=>({...f,inrDate:f.inrCheckDate,callDate:f.callDueDate,attempts:x.attempts.filter(a=>a.followupId===f.id).map(a=>({...a,actor:a.createdBy,timestamp:a.createdAt}))}))};
+ return {...p,communications:x.communications||[],results:x.results.map(r=>({id:r.id,date:r.testDate,value:r.inr,encounterId:r.encounterId,enteredAt:r.enteredAt,enteredBy:r.enteredBy,targetLow:r.targetLow,targetHigh:r.targetHigh})),dosePlans:x.dosePlans.map(d=>{const approval=x.approvals?.find(a=>a.recordId===d.encounterId);return {...d,date:d.effectiveDate,daily:['sun','mon','tue','wed','thu','fri','sat'].map(k=>Number(d[k])),previousDaily:d.previousDaily?JSON.parse(d.previousDaily):null,previousWeekly:d.previousWeeklyMg===''?null:d.previousWeeklyMg,weekly:d.weeklyMg,percentChange:d.percentChange===''?null:d.percentChange,enteredBy:d.createdBy,enteredAt:d.createdAt,approvedBy:approval?.actorUid,approvedAt:approval?.timestamp};}),encounters:x.encounters.map(e=>({...e,date:e.testDate,enteredBy:e.createdBy})),notes:x.notes.map(n=>({...n,date:n.noteDate,by:n.createdBy})),inventory:x.inventory.map(i=>({...i,strength:i.strengthMg,date:i.confirmedDate})),followups:x.followups.map(f=>({...f,inrDate:f.inrCheckDate,callDate:f.callDueDate,attempts:x.attempts.filter(a=>a.followupId===f.id).map(a=>({...a,actor:a.createdBy,timestamp:a.createdAt}))}))};
 }
 
 async function accountRequest(operation,body){

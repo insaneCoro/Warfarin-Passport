@@ -1,8 +1,8 @@
 /** Warfarin Passport — Google Sheets storage. Prototype only, no real patient data. */
 const SCHEMA = {
-  Patients:['id','mrn','name','dob','phone','caregiver','caregiverPhone','diagnosis','targetLow','targetHigh','enrollmentDate','enrollmentInr','status','createdAt','updatedAt','createdBy','rowVersion','warfarinStartDate','riskLevel','riskCategory','riskReason','riskReviewDate','riskUpdatedAt','riskUpdatedBy','workspaceId'],
+  Patients:['id','mrn','name','dob','phone','caregiver','caregiverPhone','diagnosis','targetLow','targetHigh','enrollmentDate','enrollmentInr','status','createdAt','updatedAt','createdBy','rowVersion','warfarinStartDate','riskLevel','riskCategory','riskReason','riskReviewDate','riskUpdatedAt','riskUpdatedBy','workspaceId','preferredLanguage','contactMethod','communicationConsent','phoneVerifiedAt','phoneVerifiedBy','confirmedTabletStrength','tabletStrengthVerifiedAt','tabletStrengthVerifiedBy'],
   INR_Results:['id','patientId','testDate','inr','enteredAt','enteredBy','encounterId','targetLow','targetHigh'],
-  Encounters:['id','requestId','patientId','testDate','inr','note','nextInrDate','status','createdAt','createdBy','holdInstruction','patientInstructions','reviewFactors'],
+  Encounters:['id','requestId','patientId','testDate','inr','note','nextInrDate','status','createdAt','createdBy','holdInstruction','patientInstructions','reviewFactors','holdInstructionAr','patientInstructionsAr'],
   Dose_Plans:['id','patientId','encounterId','effectiveDate','sun','mon','tue','wed','thu','fri','sat','weeklyMg','createdAt','createdBy','previousDaily','previousWeeklyMg','percentChange','inr','reason','nextInrDate','approvedBy','approvedAt'],
   Follow_Ups:['id','patientId','encounterId','inrCheckDate','callDueDate','status','completedAt','outcome','completedBy','createdAt'],
   Followup_Attempts:['id','requestId','followupId','patientId','outcome','actions','note','encounterId','completed','createdAt','createdBy'],
@@ -10,6 +10,11 @@ const SCHEMA = {
   Inventory_Log:['id','patientId','strengthMg','oldQuantity','newQuantity','confirmedDate','actorUid','createdAt'],
   Clinical_Notes:['id','patientId','encounterId','noteDate','text','createdAt','createdBy','supersedes'],
   Team_Messages:['id','requestId','threadId','replyTo','patientId','body','createdAt','createdBy','authorName','authorRole','workspaceId'],
+  Patient_Access:['id', 'patientId', 'email', 'displayName', 'kind', 'firebaseUid', 'active', 'consentAt', 'consentBy', 'createdAt', 'updatedAt', 'updatedBy', 'workspaceId'],
+  Patient_Requests:['id', 'requestId', 'patientId', 'kind', 'details', 'inr', 'testDate', 'lab', 'requestedDate', 'status', 'createdAt', 'createdBy', 'createdRole', 'verifiedBy', 'verifiedAt', 'encounterId', 'workspaceId'],
+  Patient_Replies:['id', 'requestId', 'requestKey', 'patientId', 'body', 'authorName', 'createdBy', 'createdAt', 'workspaceId'],
+  Message_Drafts:['id', 'patientId', 'kind', 'language', 'body', 'planId', 'approvalId', 'phone', 'canWhatsApp', 'createdBy', 'createdAt', 'expiresAt', 'workspaceId'],
+  Communications:['id', 'draftId', 'patientId', 'kind', 'language', 'body', 'planId', 'outcome', 'note', 'createdBy', 'createdAt', 'workspaceId'],
   Users:['firebaseUid','email','role','active','displayName','createdAt','updatedAt'],
   Audit_Log:['id','timestamp','actorUid','action','recordType','recordId','detail']
 };
@@ -48,10 +53,10 @@ function database_(){const id=PropertiesService.getScriptProperties().getPropert
 function tab_(name){const sh=database_().getSheetByName(name);if(!sh||!SCHEMA[name])throw new Error('Missing database tab: '+name);const headers=sh.getRange(1,1,1,SCHEMA[name].length).getValues()[0];if(SCHEMA[name].some((h,i)=>headers[i]!==h))throw Error('Schema migration required: '+name);return sh}
 function now_(){return Utilities.formatDate(new Date(),'Asia/Riyadh',"yyyy-MM-dd'T'HH:mm:ssXXX")}
 function today_(){return Utilities.formatDate(new Date(),'Asia/Riyadh','yyyy-MM-dd')}
-function allRows_(name){const workspace=['Patients','Team_Messages'].includes(name)?workspaceState_().id:null;const sh=tab_(name),last=sh.getLastRow();if(last<2)return[];const grid=sh.getRange(2,1,last-1,SCHEMA[name].length).getValues();return grid.map((v,i)=>({__row:i+2,...Object.fromEntries(SCHEMA[name].map((k,j)=>[k,v[j]]))})).filter(o=>SCHEMA[name].some(k=>o[k]!==''&&o[k]!==null)).filter(o=>workspace===null||String(o.workspaceId||'')===workspace);}
+function allRows_(name){const workspace=['Patients','Team_Messages','Patient_Access','Patient_Requests','Patient_Replies','Message_Drafts','Communications'].includes(name)?workspaceState_().id:null;const sh=tab_(name),last=sh.getLastRow();if(last<2)return[];const grid=sh.getRange(2,1,last-1,SCHEMA[name].length).getValues();return grid.map((v,i)=>({__row:i+2,...Object.fromEntries(SCHEMA[name].map((k,j)=>[k,v[j]]))})).filter(o=>SCHEMA[name].some(k=>o[k]!==''&&o[k]!==null)).filter(o=>workspace===null||String(o.workspaceId||'')===workspace);}
 function cell_(x){if(x===null||x===undefined)return '';if(typeof x==='string' && /^[=+@\-\t\r]/.test(x))return "'"+x;return x}
-function append_(name,obj){if(['Patients','Team_Messages'].includes(name))obj={...obj,workspaceId:workspaceState_().id};const sh=tab_(name);const values=SCHEMA[name].map(k=>cell_(obj[k]));sh.appendRow(values);return obj}
-function replace_(name,record){if(['Audit_Log','Dose_Plans','INR_Results','Clinical_Notes','Followup_Attempts','Team_Messages'].includes(name))throw Error('Append-only record');const row=Number(record.__row);if(!(row>=2))throw Error('Missing row reference');tab_(name).getRange(row,1,1,SCHEMA[name].length).setValues([SCHEMA[name].map(k=>cell_(record[k]))]);return record}
+function append_(name,obj){if(['Patients','Team_Messages','Patient_Access','Patient_Requests','Patient_Replies','Message_Drafts','Communications'].includes(name))obj={...obj,workspaceId:workspaceState_().id};const sh=tab_(name);const values=SCHEMA[name].map(k=>cell_(obj[k]));sh.appendRow(values);return obj}
+function replace_(name,record){if(['Audit_Log','Dose_Plans','INR_Results','Clinical_Notes','Followup_Attempts','Team_Messages','Patient_Replies','Message_Drafts','Communications'].includes(name))throw Error('Append-only record');const row=Number(record.__row);if(!(row>=2))throw Error('Missing row reference');tab_(name).getRange(row,1,1,SCHEMA[name].length).setValues([SCHEMA[name].map(k=>cell_(record[k]))]);return record}
 function findRow_(name,key,value){return allRows_(name).find(o=>String(o[key])===String(value))}
 function requirePatient_(id){const p=findRow_('Patients','id',id);if(!p||p.status==='Archived'||p.status==='Importing')throw new Error('Patient not found');return p}
 function audit_(user,action,kind,id,detail){append_('Audit_Log',{id:Utilities.getUuid(),timestamp:now_(),actorUid:user.uid,action,recordType:kind,recordId:id,detail:JSON.stringify({actor:{uid:user.uid,email:user.email||'',role:user.role||''},data:detail||null})})}
@@ -77,7 +82,7 @@ function migrateDatabase(){return withLock_(()=>{
  });
  return 'Additive migration complete';
 })}
-const CLINIC_RELEASE='clinic-management-v3';
+const CLINIC_RELEASE='clinic-patient-care-v4';
 function ensureSchemaForRelease_(user){
  if(user.role!=='admin')return;
  const cache=CacheService.getScriptCache(),key='schema-'+CLINIC_RELEASE;
