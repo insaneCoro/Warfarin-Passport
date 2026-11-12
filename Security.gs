@@ -38,9 +38,13 @@ function authorized_(identity){const u=findRow_('Users','firebaseUid',identity.u
 }
 function requireAdmin_(user){if(user.role!=='admin')throw Error('Admin permission required')}
 function dispatch_(payload){const user=authorized_(payload.user),a=payload.action,p=payload.params||{};
- const read=['auth.me','patients.list','patients.get','followups.list','users.list'];
- if(!read.includes(a)&&!['patients.create','patients.update','encounters.create','followups.complete','followups.record','decisions.approve','inventory.set','notes.create','users.upsert','demo.seed'].includes(a))throw Error('Unsupported action');
- if(a==='auth.me')return user;
+ ensureSchemaForRelease_(user);
+ const read=['auth.me','patients.list','patients.get','followups.list','users.list','messages.list','system.status'];
+ if(!read.includes(a)&&!['patients.create','patients.update','encounters.create','followups.complete','followups.record','decisions.approve','inventory.set','notes.create','users.upsert','demo.seed','messages.create'].includes(a))throw Error('Unsupported action');
+ if(a==='auth.me')return {...user,backendRelease:CLINIC_RELEASE};
+ if(a==='system.status')return {release:CLINIC_RELEASE,features:['team-messages','dose-review','ttr']};
+ if(a==='messages.list')return messagesList_(p,user);
+ if(a==='messages.create')return messageCreate_(p,user);
  if(a==='demo.seed')return demoSeed_(p,user);
  if(a==='patients.list')return patientsList_(p,user);
  if(a==='patients.get')return patientGet_(p,user);

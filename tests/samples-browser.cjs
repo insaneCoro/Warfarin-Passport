@@ -15,7 +15,7 @@ const {chromium}=require('playwright');
    await route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,result})});
   });
   await page.goto((process.env.TEST_URL||'http://127.0.0.1:8000/')+'?mode=connected');
-  await page.locator('[name=email]').fill('synthetic@example.test');await page.locator('[name=password]').fill('synthetic-mocked-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.getByText('Clinic overview',{exact:true}).waitFor();
+  await page.locator('[name=email]').fill('synthetic@example.test');await page.locator('[name=password]').fill('synthetic-mocked-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.getByText('Clinic dashboard',{exact:true}).waitFor();
   await page.locator('[data-nav=staff]').click();
   if(role==='admin'){
    await page.getByRole('button',{name:'Load sample patients',exact:true}).click();await page.getByRole('status').filter({hasText:'Loaded 4 sample patient(s)'}).waitFor();
