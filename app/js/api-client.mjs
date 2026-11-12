@@ -10,7 +10,37 @@ let session = null,
   refreshing = null;
 export const connectionAvailable = config.enabled;
 export const connected = usesConnectedApi(config.enabled, globalThis.location?.search || '');
-export async function signIn(email, password, action = 'auth.me') {
+// Only the Firebase refresh token is kept, in sessionStorage: it survives a page refresh but is cleared
+// when the tab closes. No patient data is ever stored in the browser.
+const SESSION_KEY = 'warfarin-passport-session';
+function remember(current) {
+  try {
+    if (current?.refreshToken) sessionStorage.setItem(SESSION_KEY, current.refreshToken);
+    else sessionStorage.removeItem(SESSION_KEY);
+  } catch {}
+}
+export function hasSavedSession() {
+  try {
+    return connected && !!sessionStorage.getItem(SESSION_KEY);
+  } catch {
+    return false;
+  }
+}
+/** After a page refresh: sign back in with the saved refresh token. Returns the user, or null. */
+export async function restoreSession(params = {}) {
+  if (!hasSavedSession()) return null;
+  session = { token: '', refreshToken: sessionStorage.getItem(SESSION_KEY), expires: 0 };
+  try {
+    await renewSession(true);
+    const user = await api('auth.me', params);
+    session.workspaceId = user.workspaceId;
+    return user;
+  } catch {
+    signOut();
+    return null;
+  }
+}
+export async function signIn(email, password, action = 'auth.me', params = {}) {
   if (!connected || !config.gatewayUrl.startsWith('https://')) throw Error('Connection not configured');
   const r = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(config.firebaseApiKey)}`,
@@ -28,17 +58,20 @@ export async function signIn(email, password, action = 'auth.me') {
     expires: Date.now() + Number(data.expiresIn) * 1000,
   };
   try {
-    const user = await api(action, {});
+    const user = await api(action, params);
     session.workspaceId = user.workspaceId;
+    remember(session);
     return user;
   } catch (err) {
     session = null;
+    remember(null);
     throw Error(connectionErrorMessage(err.connectionCode || 'GATEWAY_NETWORK'));
   }
 }
 export function signOut() {
   session = null;
   refreshing = null;
+  remember(null);
 }
 const readActions = new Set([
   'auth.me',
@@ -78,13 +111,17 @@ async function renewSession(force = false) {
     }
     const data = await r.json();
     if (!r.ok || !data.id_token) {
-      if (session === current) session = null;
+      if (session === current) {
+        session = null;
+        remember(null);
+      }
       throw Error('Please sign in again; your session has ended.');
     }
     if (session !== current) throw Error('You signed out. Sign in again to continue.');
     current.token = data.id_token;
     current.refreshToken = data.refresh_token || current.refreshToken;
     current.expires = Date.now() + Number(data.expires_in) * 1000;
+    if (session === current) remember(current);
     return current;
   })();
   refreshing = promise;

@@ -26,6 +26,8 @@ import {
   signOut,
   api,
   patientFromApi,
+  hasSavedSession,
+  restoreSession,
 } from './api-client.mjs?v=__BUILD__';
 import { doseSummary, followupAttempt } from './clinical-utils.mjs?v=__BUILD__';
 import { addDays, todayRiyadh, dateLabel, ageFromDOB, sumDose } from './date-utils.mjs?v=__BUILD__';
@@ -135,6 +137,7 @@ function load() {
 }
 let patients = connected ? [] : load();
 let staff = null,
+  restoring = false,
   workspaceBusy = false,
   workspaceError = '',
   remoteRefreshedAt = '',
@@ -708,7 +711,7 @@ function clinicAccess() {
 function pageAccessStatus() {
   const pending = staff.role === 'pending',
     verify = staff.role === 'verify-email';
-  return `<section class="login-layout"><div class="login-intro"><div class="login-brand"><span class="login-logo">W<sup>+</sup></span><span>Warfarin<br>Passport</span></div><h2>Clinic access, made simple.</h2></div><section class="card login-card"><h1>${pending ? 'Waiting for administrator approval' : verify ? 'Verify your email' : 'Contact your administrator'}</h1><p><b>${e(staff.email)}</b></p><p>${pending ? 'Your email is verified. Your access request is now in the administrator’s staff page. Patient records stay locked until they approve your role.' : verify ? 'Open the verification email, then select Check my access.' : 'Your clinic access is not active. Contact your administrator; you do not need to create another account.'}</p><p id="access-status" role="status"></p><div class="mini-actions"><button class="btn primary" id="check-access">Check my access</button>${verify ? '<button class="btn" id="resend-my-verification">Resend verification email</button>' : ''}<button class="btn" id="sign-out">Sign out</button></div></section></section>`;
+  return `<section class="login-layout"><div class="login-intro"><div class="login-brand"><span class="login-logo">W<sup>+</sup></span><span>Warfarin <br>Passport</span></div><h2>Clinic access, made simple.</h2></div><section class="card login-card"><h1>${pending ? 'Waiting for administrator approval' : verify ? 'Verify your email' : 'Contact your administrator'}</h1><p><b>${e(staff.email)}</b></p><p>${pending ? 'Your email is verified. Your access request is now in the administrator’s staff page. Patient records stay locked until they approve your role.' : verify ? 'Open the verification email, then select Check my access.' : 'Your clinic access is not active. Contact your administrator; you do not need to create another account.'}</p><p id="access-status" role="status"></p><div class="mini-actions"><button class="btn primary" id="check-access">Check my access</button>${verify ? '<button class="btn" id="resend-my-verification">Resend verification email</button>' : ''}<button class="btn" id="sign-out">Sign out</button></div></section></section>`;
 }
 function staffRequestPanel() {
   return `<section class="card pad"><h2>Staff awaiting approval <span class="count-chip">${staffRequests.length}</span></h2><p>These people verified their email and requested clinic access. Confirm their identity and choose their role here.</p>${
@@ -731,7 +734,7 @@ function staffRequestPanel() {
   }</section>`;
 }
 function pageLogin() {
-  return `<section class="login-layout"><div class="login-intro"><div class="login-brand"><span class="login-logo">W<sup>+</sup></span><span>Warfarin<br>Passport</span></div><p class="eyebrow">ANTICOAGULATION SERVICE</p><h2>Your clinic, in one place.</h2><p>Review results, coordinate follow-up and share clear care plans with your patients.</p><div class="login-assurance">Authorized clinic access · Your role controls what you can see</div></div><section class="card login-card"><h1>Staff & administrator sign-in</h1><p class="login-subtitle">Welcome back. Sign in with your clinic account.</p><form id="login-form">${field('email', 'Staff email', '', 'email', 'required autocomplete="username"')}${field('password', 'Password', '', 'password', 'required autocomplete="current-password"')}<button class="login-show-password" type="button" id="login-show-password" aria-pressed="false">Show password</button><p id="login-error" role="alert" class="warning-box" hidden></p><button class="btn primary login-submit" type="submit">Sign in</button><p class="form-help">Administrators and staff use this same sign-in. Your approved role determines access.</p><div class="login-account-actions"><button class="btn" type="button" id="create-account">Create my account</button><button class="inline-action" type="button" id="reset-password">Reset password</button></div><details class="login-help"><summary>First time here?</summary><p>Create your account with a password of at least 12 characters, verify the email, then sign in to request clinic access. Your administrator approves the request inside this app.</p><button class="inline-action" type="button" id="verify-account">Resend verification email</button></details></form><p class="login-development">Development workspace · Fictional records only</p></section></section>`;
+  return `<section class="login-layout"><div class="login-intro"><div class="login-brand"><span class="login-logo">W<sup>+</sup></span><span>Warfarin <br>Passport</span></div><p class="eyebrow">ANTICOAGULATION SERVICE</p><h2>Your clinic, in one place.</h2><p>Review results, coordinate follow-up and share clear care plans with your patients.</p><div class="login-assurance">Authorized clinic access · Your role controls what you can see</div></div><section class="card login-card"><h1>Staff & administrator sign-in</h1><p class="login-subtitle">Welcome back. Sign in with your clinic account.</p><form id="login-form">${field('email', 'Staff email', '', 'email', 'required autocomplete="username"')}${field('password', 'Password', '', 'password', 'required autocomplete="current-password"')}<button class="login-show-password" type="button" id="login-show-password" aria-pressed="false">Show password</button><p id="login-error" role="alert" class="warning-box" hidden></p><button class="btn primary login-submit" type="submit">Sign in</button><p class="form-help">Administrators and staff use this same sign-in. Your approved role determines access.</p><div class="login-account-actions"><button class="btn" type="button" id="create-account">Create my account</button><button class="inline-action" type="button" id="reset-password">Reset password</button></div><details class="login-help"><summary>First time here?</summary><p>Create your account with a password of at least 12 characters, verify the email, then sign in to request clinic access. Your administrator approves the request inside this app.</p><button class="inline-action" type="button" id="verify-account">Resend verification email</button></details></form><p class="login-development">Development workspace · Fictional records only</p></section></section>`;
 }
 function pageStaff() {
   if (!connected)
@@ -783,7 +786,11 @@ function render() {
     const alerts = document.querySelector('#urgent-alerts');
     if (alerts) alerts.innerHTML = '';
     modalRoot.innerHTML = '';
-    screen.innerHTML = staff ? pageAccessStatus() : pageLogin();
+    screen.innerHTML = restoring
+      ? '<section class="restoring" role="status"><span class="spinner"></span>Signing you back in…</section>'
+      : staff
+        ? pageAccessStatus()
+        : pageLogin();
     return;
   }
   let urgentRoot = document.querySelector('#urgent-alerts');
@@ -1325,16 +1332,9 @@ document.addEventListener('submit', async (ev) => {
     message.hidden = true;
     try {
       const fd = new FormData(ev.target);
-      staff = await signIn(fd.get('email'), fd.get('password'));
-      if (!clinicAccess()) {
-        render();
-        return;
-      }
-      await prepareWorkspace();
-      await refreshRemote();
-      view = new URLSearchParams(location.search).get('view') === 'staff' ? 'staff' : 'dashboard';
-      render();
-      if (view === 'staff' && staff.role === 'admin') loadApprovedStaff();
+      await enterClinic(
+        await signIn(fd.get('email'), fd.get('password'), 'auth.me', { includeWorkspace: true }),
+      );
     } catch (err) {
       if (staff) {
         remoteRefreshError = err.message;
@@ -1505,6 +1505,43 @@ if (!connected && connectionAvailable) {
     .insertAdjacentHTML('beforeend', '<a class="btn sm" href="?mode=connected">Staff sign-in</a>');
 }
 render();
+
+/** Shared by sign-in and session restore. The patients usually arrive with auth.me (one round trip). */
+async function enterClinic(user) {
+  staff = user;
+  if (!clinicAccess()) {
+    render();
+    return;
+  }
+  if (Array.isArray(user.patients)) {
+    patients = user.patients.map(patientFromApi);
+    delete staff.patients;
+    remoteRefreshedAt = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    remoteRefreshError = '';
+  } else {
+    await prepareWorkspace();
+    await refreshRemote();
+  }
+  view = new URLSearchParams(location.search).get('view') === 'staff' ? 'staff' : 'dashboard';
+  render();
+  if (view === 'staff' && staff.role === 'admin') loadApprovedStaff();
+}
+
+// A page refresh keeps you signed in (until the tab is closed).
+if (hasSavedSession()) {
+  restoring = true;
+  render();
+  restoreSession({ includeWorkspace: true })
+    .then(async (user) => {
+      restoring = false;
+      if (user) await enterClinic(user);
+      else render();
+    })
+    .catch(() => {
+      restoring = false;
+      render();
+    });
+}
 
 async function handleAccountAction(button) {
   const form = document.querySelector('#login-form'),

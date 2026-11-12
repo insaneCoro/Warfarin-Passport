@@ -34,6 +34,7 @@ const server = createServer(async (req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const url = `http://127.0.0.1:${server.address().port}/`;
 
+const TEST_TIMEOUT_MS = 180000;
 const dir = path.join(root, 'tests', 'browser');
 const args = process.argv.slice(2);
 const updateScreenshots = args.includes('--update-screenshots');
@@ -56,9 +57,15 @@ for (const test of tests) {
     let output = '';
     child.stdout.on('data', (d) => (output += d));
     child.stderr.on('data', (d) => (output += d));
+    // A hung test must fail, not stall CI forever.
+    const timer = setTimeout(() => {
+      output += `\nTimed out after ${TEST_TIMEOUT_MS / 1000}s`;
+      child.kill('SIGKILL');
+    }, TEST_TIMEOUT_MS);
     child.on('close', (c) => {
-      if (c) console.log(output.trim().split('\n').slice(-15).join('\n'));
-      resolve(c);
+      clearTimeout(timer);
+      if (c !== 0) console.log(output.trim().split('\n').slice(-15).join('\n'));
+      resolve(c === 0 ? 0 : 1);
     });
   });
   console.log(`${code ? 'FAIL' : 'PASS'} ${test} (${((Date.now() - started) / 1000).toFixed(1)}s)`);
