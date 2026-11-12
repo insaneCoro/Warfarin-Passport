@@ -30,11 +30,11 @@ export function doseReview({inr,low,high,weekly,testDate,today,bleeding='unknown
  if(recentChange==='yes')factors.push('Recent dose change: review its date and the delayed INR response; avoid stacking routine adjustments without clinician assessment.');
  if(factors.length)return finish('review','Manage the contributing clinical factors',factors,{managementSteps:[...factors,...steps],recheck:'Use the clinician’s earlier reassessment plan for the identified factor; do not default to the stable interval'});
  const validWeekly=Number.isFinite(weekly)&&weekly>0;
- const weeklyRange=validWeekly&&baselineConfirmed==='yes'?range.map(change=>Math.round(weekly*(1+change/100)*100)/100):null;
- const reference=validWeekly?{percentRange:range,weeklyRange,condition:'For stable maintenance therapy without bleeding or a transient cause; requires clinician assessment'}:null;
+ const weeklyRange=validWeekly?range.map(change=>Math.round(weekly*(1+change/100)*100)/100):null;
+ const reference=validWeekly?{percentRange:range,weeklyRange,midpoint:Math.round(weekly*(1+(range[0]+range[1])/200)*100)/100,baselineVerified:baselineConfirmed==='yes',condition:'For stable maintenance therapy without bleeding or a transient cause; requires clinician assessment'}:null;
  const pending=[bleeding,missed,interactions,illness,recentChange].some(v=>v==='unknown')||baselineConfirmed!=='yes';
  if(riskLevel==='high')return finish('review','High-risk patient — clinician-led management',[riskReason||'A high-risk flag is recorded.','The reference band remains conditional; review the flagged risk before choosing a plan.'],{reference,managementSteps:[...steps,'Review the recorded high-risk reason and use the clinician’s monitoring/escalation plan.'],recheck:'Individualize earlier monitoring for the recorded high risk; use 1–2 day reference if a dose is held for significant over-anticoagulation'});
  if(!validWeekly)return finish('review','Verify the maintenance regimen','The recorded baseline is unknown or zero. This is not an initiation nomogram.');
- if(pending)return finish('review','Management reference — assessment pending',['Complete the context assessment and verify the baseline to calculate a patient-specific weekly range.'],{reference});
+ if(pending)return finish('review','Management reference — assessment pending',['This calculation uses the recorded regimen. Verify what the patient actually took and assess clinical factors before choosing a dose.'],{reference});
  return {...base,status:inr<low?'low':inr>high?'high':'in-range',title:inr<low?'Below target':inr>high?'Above target':'Within target',percentRange:range,weeklyRange,midpoint:Math.round(weekly*(1+(range[0]+range[1])/200)*100)/100,reference,assessmentPending:false,messages:['Reference support, not an approved prescription. The clinician enters and approves the actual decision separately.']};
 }

@@ -3,11 +3,11 @@
 There is **one sign-in page** for both administrators and clinicians:
 https://insanecoro.github.io/Warfarin-Passport/?mode=connected&view=staff
 
-Use the Firebase email/password account approved in the clinic database. The approved role controls access. Browser demo mode has no real administrator account and does not grant access to the database.
+The main website opens this same staff sign-in page. Use your approved clinic account. The approved role controls access. The isolated `?mode=demo` browser preview has no real administrator account and does not grant access to the database.
 
 ## Administrator area
 
-After an approved administrator signs in, the navigation shows **Admin & staff**. That page displays the account's Administrator badge, approved staff list, staff-access form and sample-loader controls. Ordinary staff cannot list or change approved users; authorization is checked in Apps Script.
+After an approved administrator signs in, the navigation shows **Admin & staff**. That page displays the account's Administrator badge, approved staff list, staff-access form and administrator-only reset control. Ordinary staff cannot list or change approved users; authorization is checked in Apps Script.
 
 ## Add a staff member
 
@@ -23,9 +23,15 @@ New accounts do not receive clinic access by signing up. Apps Script binds one a
 
 Roles are Administrator (account/settings management), Clinician (clinical approval), and Staff (entry/follow-up). Admin status alone is not a clinician signature. Administrators cannot disable or remove their own administrator access, and the backend protects the final active administrator.
 
-## Sample loading and busy responses
+## Fictional workspace and reset
 
-The loader imports at most one patient per API request and reports progress. It resumes incomplete fixtures using deterministic IDs and preserves existing records. Short replay-protection locking is separate from database-write locking for the execute-as-owner Web App. A busy database returns a fixed English message; the client makes a bounded retry only when lock acquisition failed before a mutation began. Never reset or recreate the database to recover from a busy response.
+After an administrator signs in, the app prepares seven fixed fictional patients and labelled team handovers automatically, one patient per request. Previously entered records and edits are preserved. Ordinary staff never invoke initialization. A preparation error is shown in Admin & staff with a retry control. There is no Load sample patients button.
+
+**Reset development workspace** is available only to authenticated administrators. It requires typing `RESET DEVELOPMENT DATA` and checking the archival confirmation. It starts a fresh, empty active workspace, disables further automatic fixtures, and signs the browser out. Existing Users, credentials, configuration and immutable clinical/audit history remain intact. Staff sign in again; reset does not remove administrators or require recreating Firebase accounts.
+
+Reset appends request/completion audit events and changes the private `CLINIC_WORKSPACE` setting. Additive `workspaceId` columns on Patients and Team_Messages scope active views; legacy rows with blank scope remain in the initial workspace. Child clinical records remain attached to their original patients and cannot be accessed through active patient endpoints after reset. Old form submissions are rejected after a workspace change. No spreadsheet or tab is deleted, and no historical dose is overwritten. Archive rows remain inspectable by the database owner in the existing Sheet; this is not a data-erasure function. Reset does not enable real-patient use or remove the synthetic-identifier guard.
+
+A busy database returns a fixed English message with a bounded retry only when lock acquisition failed before mutation began. Never recreate the database to recover from a busy response.
 
 ## Deployment
 
