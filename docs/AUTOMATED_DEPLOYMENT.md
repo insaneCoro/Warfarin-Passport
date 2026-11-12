@@ -43,7 +43,7 @@ If Google blocks authorization or the browser terminal is unavailable, stop and 
 
 After this workflow has been merged into `main`:
 
-1. Open repository **Actions → Deploy existing Apps Script → Run workflow**.
+1. Open repository **Actions → Deploy existing Apps Script → Run workflow**. For the first clinic-workspace release while PR #9 is still under review, choose branch **`feature/clinic-workspace`** so the backend is prepared before publishing the redesigned frontend. Once that release is merged, use `main` for routine updates.
 2. Keep **Publish** unchecked for a read-only preflight. The workflow checks account access, confirms the deployment belongs to the selected project and validates the existing manifest/source layout. It does not change code or data.
 3. Once that succeeds, run the workflow again with **Publish** checked. It updates the managed `API`, `Database` and `Security` source files, retains other non-conflicting project files and the existing manifest, creates a version, and updates the same deployment ID. A duplicate unmanaged function (for example a second old `doPost` in `Code.gs`) stops deployment for manual review rather than silently deleting it.
 4. Sign out and back in as the approved **admin** account. New tabs/columns are added automatically on that admin request. Unexpected schema headers stop migration; existing rows are never deleted or reordered. Staff & settings should show backend release **`clinic-workspace-v1`**.
