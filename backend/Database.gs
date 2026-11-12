@@ -146,52 +146,6 @@ const SCHEMA = {
     'authorRole',
     'workspaceId',
   ],
-  Patient_Access: [
-    'id',
-    'patientId',
-    'email',
-    'displayName',
-    'kind',
-    'firebaseUid',
-    'active',
-    'consentAt',
-    'consentBy',
-    'createdAt',
-    'updatedAt',
-    'updatedBy',
-    'workspaceId',
-    'acceptedAt',
-  ],
-  Patient_Requests: [
-    'id',
-    'requestId',
-    'patientId',
-    'kind',
-    'details',
-    'inr',
-    'testDate',
-    'lab',
-    'requestedDate',
-    'status',
-    'createdAt',
-    'createdBy',
-    'createdRole',
-    'verifiedBy',
-    'verifiedAt',
-    'encounterId',
-    'workspaceId',
-  ],
-  Patient_Replies: [
-    'id',
-    'requestId',
-    'requestKey',
-    'patientId',
-    'body',
-    'authorName',
-    'createdBy',
-    'createdAt',
-    'workspaceId',
-  ],
   Message_Drafts: [
     'id',
     'patientId',
@@ -289,15 +243,7 @@ function today_() {
   return Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd');
 }
 function allRows_(name) {
-  const workspace = [
-    'Patients',
-    'Team_Messages',
-    'Patient_Access',
-    'Patient_Requests',
-    'Patient_Replies',
-    'Message_Drafts',
-    'Communications',
-  ].includes(name)
+  const workspace = ['Patients', 'Team_Messages', 'Message_Drafts', 'Communications'].includes(name)
     ? workspaceState_().id
     : null;
   const sh = tab_(name),
@@ -338,17 +284,7 @@ function cell_(x) {
   return x;
 }
 function append_(name, obj) {
-  if (
-    [
-      'Patients',
-      'Team_Messages',
-      'Patient_Access',
-      'Patient_Requests',
-      'Patient_Replies',
-      'Message_Drafts',
-      'Communications',
-    ].includes(name)
-  )
+  if (['Patients', 'Team_Messages', 'Message_Drafts', 'Communications'].includes(name))
     obj = { ...obj, workspaceId: workspaceState_().id };
   const sh = tab_(name);
   const values = SCHEMA[name].map((k) => cell_(obj[k]));
@@ -364,7 +300,6 @@ function replace_(name, record) {
       'Clinical_Notes',
       'Followup_Attempts',
       'Team_Messages',
-      'Patient_Replies',
       'Message_Drafts',
       'Communications',
     ].includes(name)
@@ -457,7 +392,7 @@ function migrateDatabase() {
     return 'Additive migration complete';
   });
 }
-const CLINIC_RELEASE = 'clinic-patient-care-v4';
+const CLINIC_RELEASE = 'clinic-staff-care-v5';
 function ensureSchemaForRelease_(user) {
   if (user.role !== 'admin') return;
   const cache = CacheService.getScriptCache(),

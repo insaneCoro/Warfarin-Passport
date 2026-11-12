@@ -65,16 +65,6 @@ const { chromium } = require('playwright');
         },
         doc,
       );
-      c.patientAccessSave_(
-        {
-          patientId: 'p1',
-          email: 'person@example.test',
-          displayName: 'Fictional person',
-          kind: 'patient',
-          confirmConsent: true,
-        },
-        doc,
-      );
       const context = await b.newContext({ viewport: { width, height: 1100 } }),
         errors = [];
       await context.addInitScript(() => {
@@ -90,20 +80,17 @@ const { chromium } = require('playwright');
         return r.fulfill({
           contentType: 'application/json',
           body: JSON.stringify({
-            idToken: email === 'doctor@example.test' ? 'doctor-token' : 'patient-token',
+            idToken: 'doctor-token',
             expiresIn: 3600,
           }),
         });
       });
       await context.route('https://warfarin-passport-api.m-k-altaher.workers.dev/**', (r) => {
         try {
-          const payload = r.request().postDataJSON(),
-            staff = r.request().headers().authorization === 'Bearer doctor-token';
+          const payload = r.request().postDataJSON();
           const result = c.dispatch_({
             ...payload,
-            user: staff
-              ? { uid: doc.uid, email: doc.email, emailVerified: true }
-              : { uid: 'patient-user', email: 'person@example.test', emailVerified: true },
+            user: { uid: doc.uid, email: doc.email, emailVerified: true },
           });
           return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, result }) });
         } catch (err) {
@@ -152,57 +139,7 @@ const { chromium } = require('playwright');
       await staff.locator('[name=confirmed]').check();
       await staff.locator('#care-form [type=submit]').click();
       await staff.locator('#care-form').waitFor({ state: 'detached' });
-      const patient = await context.newPage();
-      await patient.goto(base + 'portal.html');
-      await patient.locator('[name=email]').fill('person@example.test');
-      await patient.locator('[name=password]').fill('synthetic-password');
-      await patient.getByRole('button', { name: 'Sign in', exact: true }).click();
-      await patient.getByRole('heading', { name: 'My clinician-approved care plan', exact: true }).waitFor();
-      if (await patient.locator('input[name=weeklyMg],input[name=dose0]').count())
-        throw Error('Patient can edit dose');
-      await patient.locator('[name=testDate]').fill('2026-11-12');
-      await patient.locator('[name=inr]').fill('2.6');
-      await patient.locator('[name=lab]').fill('Fictional PHC laboratory');
-      await patient.locator('#portal-request [type=submit]').click();
-      await patient.getByText('Awaiting clinic review', { exact: true }).waitFor();
-      if (c.allRows_('Patient_Requests')[0].status !== 'Awaiting review')
-        throw Error('Self-submitted result verified automatically');
-      await patient.locator('#portal-kind').selectOption('question');
-      await patient.locator('[name=details]').fill('Synthetic question kept across language switch');
-      await patient.locator('#portal-language').click();
-      if (
-        (await patient.locator('[name=details]').inputValue()) !==
-        'Synthetic question kept across language switch'
-      )
-        throw Error('Language switch lost draft');
-      if ((await patient.locator('html').getAttribute('dir')) !== 'rtl')
-        throw Error('Arabic portal is not RTL');
-      await patient.screenshot({
-        path: `${process.env.SCREENSHOT_DIR || 'docs/screenshots'}/patient-portal-ar-${width}.png`,
-        fullPage: true,
-      });
-      await patient.locator('#portal-language').click();
-      await patient.locator('#portal-request [type=submit]').click();
-      await patient.getByText('Synthetic question kept across language switch', { exact: true }).waitFor();
-      await staff.locator('[data-care-inbox]').click();
-      await staff.getByRole('heading', { name: 'Patient requests', exact: true }).waitFor();
-      const row = staff
-        .locator('.request-item')
-        .filter({ hasText: 'Synthetic question kept across language switch' });
-      await row.getByRole('button', { name: 'Reply', exact: true }).click();
-      await staff
-        .locator('#care-form [name=body]')
-        .fill('Synthetic clinic reply. Continue the approved plan; call if unclear.');
-      await staff.locator('#care-form [type=submit]').click();
-      await staff.locator('#care-form').waitFor({ state: 'detached' });
-      await patient.locator('#portal-refresh').click();
-      await patient
-        .getByText('Synthetic clinic reply. Continue the approved plan; call if unclear.', { exact: false })
-        .waitFor();
-      if (
-        (await patient.evaluate(() => document.documentElement.scrollWidth > innerWidth)) ||
-        (await staff.evaluate(() => document.documentElement.scrollWidth > innerWidth))
-      )
+      if (await staff.evaluate(() => document.documentElement.scrollWidth > innerWidth))
         throw Error('Viewport overflow');
       await staff.screenshot({
         path: `${process.env.SCREENSHOT_DIR || 'docs/screenshots'}/staff-care-${width}.png`,
@@ -219,8 +156,7 @@ const { chromium } = require('playwright');
       });
       if (errors.length) throw Error(errors.join(';'));
       console.log(
-        width +
-          ': staff tasks, approved bilingual messaging, explicit outcome, clinician approval, patient portal, unverified submission, draft preservation and secure replies passed',
+        width + ': staff tasks, approved bilingual messaging, explicit outcome and clinician approval passed',
       );
       await context.close();
     }

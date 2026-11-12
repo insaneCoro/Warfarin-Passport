@@ -35,8 +35,8 @@ function buildPatientMessage({
   if (testDate) testDate = dateLabel(testDate);
   if (kind === 'reminder')
     return ar
-      ? `مرحبًا ${name}،\nتذكير من ${clinic}: موعد فحص سيولة الدم INR القادم هو ${nextDate}.\nيرجى ترتيب إجراء الفحص في مختبر مركز الرعاية الصحية الأولية. بعد الفحص، أرسل النتيجة عبر صفحتك أو وسيلة التواصل المتفق عليها مع العيادة.\nإذا تعذّر إجراء الفحص في الموعد، تواصل مع العيادة لترتيب المتابعة.${contact}`
-      : `Hello ${name},\nA reminder from ${clinic}: your next INR blood test is due on ${nextDate}.\nPlease arrange testing at your Primary Health Care Centre laboratory. After testing, submit the result through your passport or the agreed clinic contact method.\nIf you cannot attend, contact the clinic to arrange follow-up.${contact}`;
+      ? `مرحبًا ${name}،\nتذكير من ${clinic}: موعد فحص سيولة الدم INR القادم هو ${nextDate}.\nيرجى ترتيب إجراء الفحص في مختبر مركز الرعاية الصحية الأولية. بعد الفحص، أرسل النتيجة إلى العيادة عبر وسيلة التواصل المتفق عليها.\nإذا تعذّر إجراء الفحص في الموعد، تواصل مع العيادة لترتيب المتابعة.${contact}`
+      : `Hello ${name},\nA reminder from ${clinic}: your next INR blood test is due on ${nextDate}.\nPlease arrange testing at your Primary Health Care Centre laboratory. After testing, send the result to the clinic using the agreed contact method.\nIf you cannot attend, contact the clinic to arrange follow-up.${contact}`;
   if (
     !Array.isArray(daily) ||
     daily.length !== 7 ||

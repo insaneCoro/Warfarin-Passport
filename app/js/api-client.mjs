@@ -33,11 +33,7 @@ export async function signIn(email, password, action = 'auth.me') {
     return user;
   } catch (err) {
     session = null;
-    throw Error(
-      action === 'portal.me'
-        ? 'Verify your email and ask the clinic to link your account. If access was removed, contact the clinic.'
-        : connectionErrorMessage(err.connectionCode || 'GATEWAY_NETWORK'),
-    );
+    throw Error(connectionErrorMessage(err.connectionCode || 'GATEWAY_NETWORK'));
   }
 }
 export function signOut() {
@@ -55,10 +51,6 @@ const readActions = new Set([
   'users.list',
   'messages.list',
   'system.status',
-  'portal.me',
-  'portal.passport',
-  'access.list',
-  'requests.list',
   'communications.validate',
 ]);
 async function renewSession(force = false) {
@@ -177,7 +169,6 @@ export function patientFromApi(x) {
   const p = x.patient;
   return {
     ...p,
-    requests: x.requests || [],
     communications: x.communications || [],
     results: x.results.map((r) => ({
       id: r.id,

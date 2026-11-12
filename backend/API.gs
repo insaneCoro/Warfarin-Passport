@@ -139,7 +139,6 @@ function patientBundle_(record, snapshot) {
     attempts: owned('Followup_Attempts').map(patientView_),
     inventory: owned('Inventory').map(patientView_),
     notes: owned('Clinical_Notes').map(patientView_),
-    requests: owned('Patient_Requests').map(patientView_),
     communications: owned('Communications').map(patientView_),
   };
 }
@@ -155,7 +154,6 @@ function patientSnapshot_() {
       'Inventory',
       'Clinical_Notes',
       'Communications',
-      'Patient_Requests',
       'Users',
     ].map((name) => [name, allRows_(name)]),
   );
@@ -1153,8 +1151,8 @@ function buildPatientMessage({
   if (testDate) testDate = dateLabel(testDate);
   if (kind === 'reminder')
     return ar
-      ? `مرحبًا ${name}،\nتذكير من ${clinic}: موعد فحص سيولة الدم INR القادم هو ${nextDate}.\nيرجى ترتيب إجراء الفحص في مختبر مركز الرعاية الصحية الأولية. بعد الفحص، أرسل النتيجة عبر صفحتك أو وسيلة التواصل المتفق عليها مع العيادة.\nإذا تعذّر إجراء الفحص في الموعد، تواصل مع العيادة لترتيب المتابعة.${contact}`
-      : `Hello ${name},\nA reminder from ${clinic}: your next INR blood test is due on ${nextDate}.\nPlease arrange testing at your Primary Health Care Centre laboratory. After testing, submit the result through your passport or the agreed clinic contact method.\nIf you cannot attend, contact the clinic to arrange follow-up.${contact}`;
+      ? `مرحبًا ${name}،\nتذكير من ${clinic}: موعد فحص سيولة الدم INR القادم هو ${nextDate}.\nيرجى ترتيب إجراء الفحص في مختبر مركز الرعاية الصحية الأولية. بعد الفحص، أرسل النتيجة إلى العيادة عبر وسيلة التواصل المتفق عليها.\nإذا تعذّر إجراء الفحص في الموعد، تواصل مع العيادة لترتيب المتابعة.${contact}`
+      : `Hello ${name},\nA reminder from ${clinic}: your next INR blood test is due on ${nextDate}.\nPlease arrange testing at your Primary Health Care Centre laboratory. After testing, send the result to the clinic using the agreed contact method.\nIf you cannot attend, contact the clinic to arrange follow-up.${contact}`;
   if (
     !Array.isArray(daily) ||
     daily.length !== 7 ||
@@ -1173,151 +1171,6 @@ function buildPatientMessage({
     : `Hello ${name},\nYour ${clinic} team reviewed your result from ${testDate}.\nINR: ${inr}\nYour target: ${target}\n\nClinician-approved warfarin schedule:\n${schedule}\n${hold ? '\nTemporary hold instructions — exactly as approved:\n' + hold + '\n' : ''}${instructions ? '\nAdditional instructions — exactly as approved:\n' + instructions + '\n' : ''}\nNext INR: ${nextDate}, at your Primary Health Care Centre laboratory.\nContact the clinic if any instruction is unclear. Severe bleeding or a head injury requires immediate emergency assessment.${contact}`;
 }
 
-/** Patient access is a separate, verified identity boundary, never a staff role. */
-function careTeam_(u) {
-  if (!['admin', 'clinician'].includes(u.role)) throw Error('Administrator or clinician required');
-}
-function patientAccessList_(p, u) {
-  careTeam_(u);
-  requirePatient_(clean_(p.patientId, 80));
-  return allRows_('Patient_Access')
-    .filter((a) => a.patientId === p.patientId)
-    .map((a) => ({
-      id: a.id,
-      email: a.email,
-      displayName: a.displayName,
-      kind: a.kind,
-      active: a.active,
-      linked: !!a.firebaseUid,
-    }));
-}
-function patientAccessSave_(p, u) {
-  careTeam_(u);
-  return withLock_(() => {
-    assertWorkspace_(p);
-    const patient = requirePatient_(clean_(p.patientId, 80)),
-      email = clean_(p.email, 160).toLowerCase(),
-      kind = clean_(p.kind, 20),
-      name = clean_(p.displayName, 120);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !['patient', 'caregiver'].includes(kind) || !name)
-      throw Error('Name, valid email and access type required');
-    if (p.active !== false && p.confirmConsent !== true)
-      throw Error('Confirm identity and patient consent before granting access');
-    const existing = allRows_('Patient_Access').find(
-      (a) => a.patientId === patient.id && a.email === email && a.kind === kind,
-    );
-    const record = {
-      id: existing?.id || Utilities.getUuid(),
-      patientId: patient.id,
-      email,
-      displayName: name,
-      kind,
-      firebaseUid: existing?.firebaseUid || '',
-      acceptedAt: existing?.acceptedAt || '',
-      active: p.active !== false,
-      consentAt: p.active !== false ? now_() : existing?.consentAt || '',
-      consentBy: p.active !== false ? u.uid : existing?.consentBy || '',
-      createdAt: existing?.createdAt || now_(),
-      updatedAt: now_(),
-      updatedBy: u.uid,
-      workspaceId: workspaceState_().id,
-    };
-    audit_(u, 'patient.access.request', 'Patient_Access', record.id, {
-      before: existing ? patientView_(existing) : null,
-      after: record,
-    });
-    existing ? replace_('Patient_Access', { ...existing, ...record }) : append_('Patient_Access', record);
-    audit_(u, 'patient.access.update', 'Patient_Access', record.id, {
-      before: existing ? patientView_(existing) : null,
-      after: record,
-    });
-    return { id: record.id };
-  });
-}
-function portalCandidates_(identity) {
-  const ids = new Set(
-    allRows_('Patients')
-      .filter((p) => !['Archived', 'Importing'].includes(p.status))
-      .map((p) => p.id),
-  );
-  return allRows_('Patient_Access').filter(
-    (a) =>
-      String(a.active).toLowerCase() === 'true' &&
-      String(a.email).toLowerCase() === identity.email.toLowerCase() &&
-      (!a.firebaseUid || a.firebaseUid === identity.uid) &&
-      ids.has(a.patientId),
-  );
-}
-function portalLinks_(identity) {
-  if (!identity?.uid || identity.emailVerified !== true || !identity.email)
-    throw Error('Verify your email and ask the clinic to link your account');
-  const initial = portalCandidates_(identity);
-  if (!initial.length) throw Error('No active patient access. Ask the clinic to approve your account');
-  if (initial.every((a) => a.firebaseUid === identity.uid && a.acceptedAt)) return initial;
-  return withLock_(() => {
-    const links = portalCandidates_(identity);
-    if (!links.length) throw Error('No active patient access. Ask the clinic to approve your account');
-    for (const a of links) {
-      const actor = { uid: identity.uid, email: identity.email, role: a.kind };
-      if (!a.firebaseUid) {
-        audit_(actor, 'patient.access.accept.request', 'Patient_Access', a.id, { patientId: a.patientId });
-        replace_('Patient_Access', { ...a, firebaseUid: identity.uid, updatedAt: now_() });
-      }
-      if (!a.acceptedAt) {
-        const events = allRows_('Audit_Log');
-        if (
-          !events.some(
-            (e) => e.action === 'patient.access.accept' && e.recordId === a.id && e.actorUid === identity.uid,
-          )
-        )
-          audit_(actor, 'patient.access.accept', 'Patient_Access', a.id, {
-            patientId: a.patientId,
-            existingBinding: !!a.firebaseUid,
-          });
-        replace_('Patient_Access', {
-          ...findRow_('Patient_Access', 'id', a.id),
-          firebaseUid: identity.uid,
-          acceptedAt: now_(),
-          updatedAt: now_(),
-        });
-      }
-    }
-    return links.map((a) => ({ ...a, firebaseUid: identity.uid }));
-  });
-}
-function assertPortalWrite_(p, u) {
-  if (
-    !allRows_('Patient_Access').some(
-      (a) =>
-        a.patientId === p.patientId &&
-        a.firebaseUid === u.uid &&
-        String(a.email).toLowerCase() === String(u.email).toLowerCase() &&
-        a.kind === u.role &&
-        String(a.active).toLowerCase() === 'true',
-    )
-  )
-    throw Error('Patient access was removed. Contact the clinic');
-}
-function portalDispatch_(a, p, identity) {
-  if (!['portal.me', 'portal.passport', 'portal.request'].includes(a))
-    throw Error('Patient action not permitted');
-  const links = portalLinks_(identity);
-  if (a === 'portal.me')
-    return {
-      workspaceId: workspaceState_().id,
-      role: 'patient-portal',
-      links: links.map((l) => {
-        const patient = requirePatient_(l.patientId);
-        return { patientId: l.patientId, kind: l.kind, name: patient.name, mrn: patient.mrn };
-      }),
-    };
-  const link = links.find((l) => l.patientId === p.patientId);
-  if (!link) throw Error('Patient access denied');
-  const actor = { uid: identity.uid, email: identity.email, role: link.kind };
-  if (a === 'portal.passport') return portalPassport_(p, actor);
-  if (a === 'portal.request') return portalRequest_(p, actor);
-  throw Error('Patient action not permitted');
-}
 function approvedPlan_(patientId) {
   const approvals = allRows_('Audit_Log').filter((a) => a.action === 'decision.approve'),
     encounters = allRows_('Encounters').filter((e) => e.patientId === patientId && e.status === 'Complete');
@@ -1359,234 +1212,13 @@ function approvedPlan_(patientId) {
       actorLabel_(approval.actorUid, approval, approver ? [approver] : []) || 'Clinic clinician',
   };
 }
-function portalPassport_(p, u) {
-  const patient = requirePatient_(p.patientId),
-    plan = approvedPlan_(patient.id),
-    allRequests = allRows_('Patient_Requests').filter((r) => r.patientId === patient.id),
-    requests = allRequests.filter((r) => r.createdBy === u.uid),
-    replies = allRows_('Patient_Replies'),
-    approved = new Set(
-      allRows_('Audit_Log')
-        .filter((a) => a.action === 'decision.approve')
-        .map((a) => a.recordId),
-    );
-  audit_(u, 'portal.passport.view', 'Patients', patient.id, { readOnly: true });
-  return {
-    needsPromptVerification: allRequests.some(
-      (r) => r.kind === 'inr' && r.status === 'Awaiting review' && reportedValueNeedsReview_(patient, r.inr),
-    ),
-    clinic: clinicSettingsRead_(),
-    results: allRows_('INR_Results')
-      .filter((r) => r.patientId === patient.id && approved.has(r.encounterId))
-      .map((r) => ({ date: r.testDate, inr: r.inr })),
-    patient: {
-      name: patient.name,
-      confirmedTabletStrength: patient.tabletStrengthVerifiedAt ? patient.confirmedTabletStrength : '',
-      targetLow: patient.targetLow,
-      targetHigh: patient.targetHigh,
-      language: patient.preferredLanguage || 'en',
-    },
-    plan,
-    awaitingReview:
-      allRequests.some(
-        (r) => r.kind === 'inr' && r.status === 'Awaiting review' && (!plan || r.testDate >= plan.testDate),
-      ) ||
-      (!!plan &&
-        (Number(plan.targetLow) !== Number(patient.targetLow) ||
-          Number(plan.targetHigh) !== Number(patient.targetHigh))) ||
-      allRows_('Encounters').some(
-        (e) => e.patientId === patient.id && e.status === 'Complete' && !approved.has(e.id),
-      ),
-    requests: requests.map((r) => ({
-      id: r.id,
-      kind: r.kind,
-      status: r.status,
-      testDate: r.testDate,
-      inr: r.inr,
-      requestedDate: r.requestedDate,
-      details: r.details,
-      createdAt: r.createdAt,
-      replies: replies
-        .filter((x) => x.requestId === r.id)
-        .map((x) => ({ body: x.body, createdAt: x.createdAt, authorName: x.authorName })),
-    })),
-  };
-}
-function portalRequest_(p, u) {
-  return withLock_(() => {
-    assertWorkspace_(p);
-    assertPortalWrite_(p, u);
-    const patient = requirePatient_(p.patientId),
-      key = clean_(p.requestId, 100),
-      kind = clean_(p.kind, 20),
-      details = clean_(p.details, 2000);
-    if (!/^[a-z0-9-]{16,100}$/i.test(key) || !['inr', 'question', 'appointment'].includes(kind))
-      throw Error('Valid request required');
-    const testDate = kind === 'inr' ? requireDate_(clean_(p.testDate, 10)) : '',
-      inr = kind === 'inr' ? Number(p.inr) : '',
-      lab = kind === 'inr' ? clean_(p.lab, 160) : '',
-      requestedDate = kind === 'appointment' ? requireDate_(clean_(p.requestedDate, 10)) : '';
-    if (kind === 'inr' && (!(inr > 0 && inr <= 20) || testDate > today_() || !lab))
-      throw Error('Enter a valid measured INR, past/current test date and PHC laboratory');
-    if (kind !== 'inr' && !details) throw Error('Please describe your question or request');
-    if (requestedDate && requestedDate < today_()) throw Error('Requested test date must not be in the past');
-    const old = findRow_('Patient_Requests', 'requestId', key);
-    if (old) {
-      if (
-        old.patientId !== patient.id ||
-        old.createdBy !== u.uid ||
-        old.kind !== kind ||
-        old.details !== details ||
-        Number(old.inr) !== Number(inr) ||
-        String(old.testDate) !== testDate ||
-        String(old.requestedDate) !== requestedDate ||
-        String(old.lab) !== lab
-      )
-        throw Error('Request ID collision');
-      if (!allRows_('Audit_Log').some((a) => a.recordType === 'Patient_Requests' && a.recordId === old.id))
-        audit_(u, 'portal.request.reconcile', 'Patient_Requests', old.id, { patientId: patient.id, kind });
-      return { id: old.id };
-    }
-    const r = {
-      id: Utilities.getUuid(),
-      requestId: key,
-      patientId: patient.id,
-      kind,
-      details,
-      inr,
-      testDate,
-      lab,
-      requestedDate,
-      status: 'Awaiting review',
-      createdAt: now_(),
-      createdBy: u.uid,
-      createdRole: u.role,
-      verifiedBy: '',
-      verifiedAt: '',
-      encounterId: '',
-      workspaceId: workspaceState_().id,
-    };
-    append_('Patient_Requests', r);
-    audit_(u, 'portal.request.create', 'Patient_Requests', r.id, { after: r, unverified: kind === 'inr' });
-    return { id: r.id };
-  });
-}
-function patientRequestsList_(p, u) {
-  const ids = new Set(
-    allRows_('Patients')
-      .filter((x) => !['Archived', 'Importing'].includes(x.status))
-      .map((x) => x.id),
-  );
-  return allRows_('Patient_Requests')
-    .filter((r) => ids.has(r.patientId) && (!p.patientId || p.patientId === r.patientId))
-    .map((r) => ({
-      ...patientView_(r),
-      patientName: requirePatient_(r.patientId).name,
-      replies: allRows_('Patient_Replies')
-        .filter((x) => x.requestId === r.id)
-        .map(patientView_),
-    }));
-}
-function patientRequestReply_(p, u) {
-  return withLock_(() => {
-    assertWorkspace_(p);
-    const r = findRow_('Patient_Requests', 'id', clean_(p.id, 80));
-    if (!r) throw Error('Request not found');
-    requirePatient_(r.patientId);
-    const body = clean_(p.body, 2000),
-      key = clean_(p.requestId, 100);
-    if (!body || !/^[a-z0-9-]{16,100}$/i.test(key)) throw Error('Reply and request ID required');
-    const prior = findRow_('Patient_Replies', 'requestKey', key);
-    if (prior) {
-      if (prior.requestId !== r.id || prior.createdBy !== u.uid || prior.body !== body)
-        throw Error('Reply request collision');
-      if (
-        !allRows_('Audit_Log').some(
-          (a) =>
-            ['portal.reply.create', 'portal.reply.reconcile'].includes(a.action) &&
-            a.recordType === 'Patient_Requests' &&
-            a.recordId === r.id &&
-            String(a.detail).includes(prior.id),
-        )
-      )
-        audit_(u, 'portal.reply.reconcile', 'Patient_Requests', r.id, { after: patientView_(prior) });
-      if (r.kind !== 'inr' && r.status !== 'Replied')
-        replace_('Patient_Requests', { ...r, status: 'Replied' });
-      return { id: prior.id };
-    }
-    const record = {
-      id: Utilities.getUuid(),
-      requestId: r.id,
-      requestKey: key,
-      patientId: r.patientId,
-      body,
-      authorName: u.displayName || 'Clinic staff',
-      createdBy: u.uid,
-      createdAt: now_(),
-      workspaceId: workspaceState_().id,
-    };
-    append_('Patient_Replies', record);
-    audit_(u, 'portal.reply.create', 'Patient_Requests', r.id, { after: record });
-    if (r.kind !== 'inr') replace_('Patient_Requests', { ...r, status: 'Replied' });
-    return { id: record.id };
-  });
-}
-function patientRequestVerify_(p, u) {
-  if (u.role !== 'clinician') throw Error('Clinician verification required');
-  return withLock_(() => {
-    assertWorkspace_(p);
-    const r = findRow_('Patient_Requests', 'id', clean_(p.id, 80));
-    if (!r || r.kind !== 'inr') throw Error('INR submission not found');
-    requirePatient_(r.patientId);
-    const e = findRow_('Encounters', 'id', clean_(p.encounterId, 80));
-    if (
-      !e ||
-      e.patientId !== r.patientId ||
-      e.status !== 'Complete' ||
-      e.testDate !== r.testDate ||
-      Number(e.inr) !== Number(r.inr) ||
-      !allRows_('Audit_Log').some((a) => a.action === 'decision.approve' && a.recordId === e.id)
-    )
-      throw Error('Link the matching clinician-approved INR encounter first');
-    if (r.status === 'Verified') {
-      if (
-        !allRows_('Audit_Log').some(
-          (a) =>
-            ['portal.result.verify', 'portal.result.verify.reconcile'].includes(a.action) &&
-            a.recordId === r.id,
-        )
-      )
-        audit_(u, 'portal.result.verify.reconcile', 'Patient_Requests', r.id, {
-          verifiedBy: r.verifiedBy,
-          encounterId: r.encounterId,
-        });
-      return { id: r.id };
-    }
-    audit_(u, 'portal.result.verify.request', 'Patient_Requests', r.id, {
-      before: { status: r.status },
-      after: { status: 'Verified', encounterId: e.id },
-    });
-    replace_('Patient_Requests', {
-      ...r,
-      status: 'Verified',
-      verifiedBy: u.uid,
-      verifiedAt: now_(),
-      encounterId: e.id,
-    });
-    audit_(u, 'portal.result.verify', 'Patient_Requests', r.id, {
-      before: { status: r.status },
-      after: { status: 'Verified', encounterId: e.id },
-    });
-    return { id: r.id };
-  });
-}
 function communicationPreferences_(p, u) {
   return withLock_(() => {
     assertWorkspace_(p);
     const old = requirePatient_(clean_(p.patientId, 80));
     if (Number(p.expectedVersion) !== Number(old.rowVersion))
       throw Error('Record changed. Reload before saving');
-    if (!['en', 'ar'].includes(p.language) || !['phone', 'whatsapp', 'portal'].includes(p.contactMethod))
+    if (!['en', 'ar'].includes(p.language) || !['phone', 'whatsapp'].includes(p.contactMethod))
       throw Error('Choose language and contact method');
     let phone = clean_(p.phone, 30).replace(/[\s()-]/g, '');
     if (p.countryCode === '+966' && /^05[0-9]{8}$/.test(phone)) phone = '+966' + phone.slice(1);
@@ -1854,51 +1486,9 @@ function clinicSettingsSave_(p, u) {
     return values;
   });
 }
-function patientRequestCorrect_(p, u) {
-  if (u.role !== 'clinician') throw Error('Clinician review required');
-  return withLock_(() => {
-    assertWorkspace_(p);
-    const r = findRow_('Patient_Requests', 'id', clean_(p.id, 80)),
-      reason = clean_(p.reason, 1500);
-    if (!r || r.kind !== 'inr') throw Error('INR submission not found');
-    requirePatient_(r.patientId);
-    if (r.status === 'Verified')
-      throw Error('A verified result needs a new clinical correction, not rejection');
-    if (p.confirmInaccurate !== true || reason.length < 10)
-      throw Error('Confirm the source was reviewed and explain why this submission is inaccurate');
-    if (r.status === 'Correction requested') return { id: r.id };
-    const key = 'correction-' + r.id;
-    if (!findRow_('Patient_Replies', 'requestKey', key))
-      append_('Patient_Replies', {
-        id: Utilities.getUuid(),
-        requestId: r.id,
-        requestKey: key,
-        patientId: r.patientId,
-        body: reason,
-        authorName: u.displayName || 'Clinic clinician',
-        createdBy: u.uid,
-        createdAt: now_(),
-        workspaceId: workspaceState_().id,
-      });
-    audit_(u, 'portal.result.correction', 'Patient_Requests', r.id, {
-      before: { status: r.status },
-      after: { status: 'Correction requested', reason },
-      verified: false,
-    });
-    replace_('Patient_Requests', { ...r, status: 'Correction requested' });
-    return { id: r.id };
-  });
-}
 
 function assertMessageContext_(patient, kind, plan) {
-  const pending = allRows_('Patient_Requests').filter(
-    (r) => r.patientId === patient.id && r.kind === 'inr' && r.status === 'Awaiting review',
-  );
   const highRisk = (v) => reportedValueNeedsReview_(patient, v);
-  if (pending.some((r) => highRisk(r.inr)))
-    throw Error('A concerning patient-reported INR needs prompt verification before routine messages');
-  if (kind === 'care-plan' && pending.some((r) => !plan || r.testDate >= plan.testDate))
-    throw Error('Verify the new patient-submitted result before communicating the care plan');
   const last = allRows_('Encounters')
     .filter((e) => e.patientId === patient.id && e.status === 'Complete')
     .at(-1);
