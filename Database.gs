@@ -54,7 +54,19 @@ function database_(){const id=PropertiesService.getScriptProperties().getPropert
 function tab_(name){const sh=database_().getSheetByName(name);if(!sh||!SCHEMA[name])throw new Error('Missing database tab: '+name);const headers=sh.getRange(1,1,1,SCHEMA[name].length).getValues()[0];if(SCHEMA[name].some((h,i)=>headers[i]!==h))throw Error('Schema migration required: '+name);return sh}
 function now_(){return Utilities.formatDate(new Date(),'Asia/Riyadh',"yyyy-MM-dd'T'HH:mm:ssXXX")}
 function today_(){return Utilities.formatDate(new Date(),'Asia/Riyadh','yyyy-MM-dd')}
-function allRows_(name){const workspace=['Patients','Team_Messages','Patient_Access','Patient_Requests','Patient_Replies','Message_Drafts','Communications'].includes(name)?workspaceState_().id:null;const sh=tab_(name),last=sh.getLastRow();if(last<2)return[];const grid=sh.getRange(2,1,last-1,SCHEMA[name].length).getValues();return grid.map((v,i)=>({__row:i+2,...Object.fromEntries(SCHEMA[name].map((k,j)=>[k,v[j]]))})).filter(o=>SCHEMA[name].some(k=>o[k]!==''&&o[k]!==null)).filter(o=>workspace===null||String(o.workspaceId||'')===workspace);}
+function allRows_(name){const workspace=['Patients','Team_Messages','Patient_Access','Patient_Requests','Patient_Replies','Message_Drafts','Communications'].includes(name)?workspaceState_().id:null;const sh=tab_(name),last=sh.getLastRow();if(last<2)return[];const grid=sh.getRange(2,1,last-1,SCHEMA[name].length).getValues();return grid.map((v,i)=>({__row:i+2,...Object.fromEntries(SCHEMA[name].map((k,j)=>[k,sheetValue_(v[j])]))})).filter(o=>SCHEMA[name].some(k=>o[k]!==''&&o[k]!==null)).filter(o=>workspace===null||String(o.workspaceId||'')===workspace);}
+/**
+ * Google Sheets turns text such as "2026-11-20" into date cells and getValues() returns Date objects.
+ * Normalize them back to the plain strings the rest of the code expects: calendar dates (midnight in the
+ * spreadsheet's time zone) become yyyy-MM-dd, other date-times become ISO 8601 with offset.
+ */
+let sheetTimeZone_=null;
+function sheetValue_(v){
+  if(Object.prototype.toString.call(v)!=='[object Date]')return v;
+  if(isNaN(v.getTime()))return '';
+  if(!sheetTimeZone_){try{sheetTimeZone_=database_().getSpreadsheetTimeZone()||'Asia/Riyadh'}catch(e){sheetTimeZone_='Asia/Riyadh'}}
+  return Utilities.formatDate(v,sheetTimeZone_,'HH:mm:ss')==='00:00:00'?Utilities.formatDate(v,sheetTimeZone_,'yyyy-MM-dd'):Utilities.formatDate(v,sheetTimeZone_,"yyyy-MM-dd'T'HH:mm:ssXXX");
+}
 function cell_(x){if(x===null||x===undefined)return '';if(typeof x==='string' && /^[=+@\-\t\r]/.test(x))return "'"+x;return x}
 function append_(name,obj){if(['Patients','Team_Messages','Patient_Access','Patient_Requests','Patient_Replies','Message_Drafts','Communications'].includes(name))obj={...obj,workspaceId:workspaceState_().id};const sh=tab_(name);const values=SCHEMA[name].map(k=>cell_(obj[k]));sh.appendRow(values);return obj}
 function replace_(name,record){if(['Audit_Log','Dose_Plans','INR_Results','Clinical_Notes','Followup_Attempts','Team_Messages','Patient_Replies','Message_Drafts','Communications'].includes(name))throw Error('Append-only record');const row=Number(record.__row);if(!(row>=2))throw Error('Missing row reference');tab_(name).getRange(row,1,1,SCHEMA[name].length).setValues([SCHEMA[name].map(k=>cell_(record[k]))]);return record}
